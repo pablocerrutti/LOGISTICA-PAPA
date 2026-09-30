@@ -6,7 +6,7 @@
 <title>Operativo Florida — Logística Papa</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-*{box-sizing:border-box}
+*{box-sizing:border-box}.hidden{display:none!important}.hiddenPanel{display:none}.moduleSwitch{display:flex;gap:6px;margin-bottom:10px}.moduleBtn{flex:1;border:1px solid #d9e1e7;background:#f7f9fa;padding:7px;border-radius:7px;font-size:10px;font-weight:850;cursor:pointer}.moduleBtn.active{background:#173f67;color:#fff;border-color:#173f67}.presenterHead{padding:12px 12px 4px}.presenterHint{font-size:11px;line-height:1.45;color:#667784;background:#f4f7f9;padding:9px;border-radius:7px}.presenterActions{display:flex;gap:6px;padding:8px 12px}.presenterItem{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #d9e1e7;border-radius:8px;margin-bottom:7px}.presenterItem input{width:16px;height:16px}.presenterSwatch{width:12px;height:12px;border-radius:3px}.presenterName{font-size:11px;font-weight:750;line-height:1.3}.presenterMeta{font-size:10px;color:#667784}.logoutBtn{margin-top:7px;border:1px solid #d9e1e7;background:#fff;border-radius:7px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer}.loginScreen{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef3f6,#dce6ed)}.loginCard{background:#fff;border:1px solid #d9e1e7;border-radius:16px;box-shadow:0 18px 60px #173f6722;width:min(430px,calc(100% - 30px));padding:28px}.loginTitle{font-size:26px;font-weight:900;margin:5px 0}.loginSub{font-size:12px;color:#667784;margin-bottom:22px}.loginButtons{display:grid;grid-template-columns:1fr 1fr;gap:10px}.loginBtn{padding:18px 10px;border-radius:10px;border:1px solid #d9e1e7;background:#f8fafb;font-weight:900;cursor:pointer}.loginBtn.presenter{border-color:#173f67}.loginBtn.designer{border-color:#687783}.loginForm{margin-top:18px;display:grid;gap:8px}.loginForm input{padding:12px;border:1px solid #d9e1e7;border-radius:8px;font:inherit}.loginSelected{font-size:12px;font-weight:850;color:#173f67}.loginBack{border:0;background:transparent;font-size:11px;cursor:pointer;color:#667784}.loginError{font-size:11px;color:#b42318;min-height:16px}
 body{margin:0;font-family:system-ui,Segoe UI,sans-serif;color:#17232d;background:#edf2f5}
 #app{height:100vh;display:grid;grid-template-columns:350px 1fr}
 aside{background:#fff;border-right:1px solid #d9e1e7;display:flex;flex-direction:column;min-width:0}
@@ -62,15 +62,13 @@ header{padding:9px 12px}.title{font-size:17px}.subtitle{font-size:11px}
 </style>
 </head>
 <body>
-<div id="app">
-<aside>
-<header>
-<div class="kicker">Presentación a la prensa</div>
+<div id="loginScreen"><div class="loginCard"><div class="kicker">Acceso restringido</div><div class="loginTitle">Operativo Florida</div><div class="loginSub">Seleccioná el módulo al que querés acceder.</div><div class="loginButtons"><button class="loginBtn presenter" data-role="presentador">PRESENTADOR</button><button class="loginBtn designer" data-role="diseñador">DISEÑO</button></div><div id="loginForm" class="loginForm hidden"><div class="loginSelected" id="loginSelected"></div><input id="loginPassword" type="password" placeholder="Contraseña" autocomplete="off"><button class="btn primary" id="loginEnter">Ingresar</button><button class="loginBack" id="loginBack">Volver</button><div class="loginError" id="loginError"></div></div></div></div><div id="app"><aside>
+<header><div class="moduleSwitch"><button class="moduleBtn active" id="moduleDesign">DISEÑO</button><button class="moduleBtn" id="modulePresenter">PRESENTADOR</button></div><div class="kicker">Presentación a la prensa</div>
 <div class="title">Operativo Florida</div>
 <div class="subtitle">Mapa logístico para la visita del Santo Padre: rutas operativas, zonas de exclusión, estacionamiento y descenso de pasajeros.</div>
 </header>
 
-<div class="toolbar">
+<div id="designPanel"><div class="toolbar">
 <div class="row">
 <button class="btn primary" id="start">＋ Nueva capa</button>
 <button class="btn" id="finish" disabled>Finalizar</button>
@@ -95,13 +93,10 @@ header{padding:9px 12px}.title{font-size:17px}.subtitle{font-size:11px}
 
 <div class="instructions" id="instructions">Elegí una ruta o zona, pulsá Nueva capa y hacé clic en el mapa para marcar puntos. Las rutas requieren 2 puntos; las zonas, 3.</div>
 <div class="row"><button class="btn" id="export">Exportar JSON</button><button class="btn" id="import">Importar JSON</button><input id="file" type="file" accept=".json" hidden></div>
-</div>
-
-<div class="layers">
-<div class="section">Capas del operativo</div>
+</div></div><div id="presenterPanel" class="hiddenPanel"><div class="presenterHead"><div class="section">Capas de presentación</div><div class="presenterHint">Marcá o desmarcá cada categoría. Todas las zonas o rutas del mismo tipo se presentan como una única capa lógica.</div></div><div class="presenterActions"><button class="btn" id="showAll">Mostrar todo</button><button class="btn" id="hideAll">Ocultar todo</button></div><div id="presenterList"></div></div><div id="designLayers" class="layers"><div class="section">Capas del operativo</div>
 <div id="list"></div>
 </div>
-<div class="footer">Las capas se guardan en este navegador. Exportá JSON para copias de seguridad. Las rutas se dibujan sobre las zonas para permanecer visibles aunque exista superposición. Mapa de OpenStreetMap.</div>
+<div class="footer">Las capas se guardan en este navegador. Exportá JSON para copias de seguridad. Las rutas se dibujan sobre las zonas para permanecer visibles aunque exista superposición. Mapa de OpenStreetMap.<br><button class="logoutBtn" id="logout">Cerrar sesión</button></div>
 </aside>
 
 <main>
@@ -158,12 +153,13 @@ map.getPane('operationalRoutes').style.zIndex=650;
 map.createPane('draftPane');
 map.getPane('draftPane').style.zIndex=700;
 
-let layers=[],drawing=false,pts=[],type='route_pontifice',draft=null,selected=null;
+let layers=[],drawing=false,pts=[],type='route_pontifice',draft=null,selected=null;let currentRole=null,presenterGroups={},presenterChecked={};const PASSWORDS={presentador:'Admin2026+',diseñador:'Ik3r2026'};
 const $=id=>document.getElementById(id);
 const setStatus=x=>$('status').textContent=x;
 
 function isRoute(t){return CONFIG[t]&&CONFIG[t].kind==='route'}
 
+function presenterShape(l){const cfg=CONFIG[l.type],a=l.points.map(p=>[p.lat,p.lng]);if(cfg.kind==='route')return L.polyline(a,{pane:'operationalRoutes',color:cfg.color,weight:cfg.weight,opacity:.65,lineCap:'round',lineJoin:'round'});return L.polygon(a,{pane:'operationalZones',color:cfg.color,weight:3,opacity:.9,fillColor:cfg.color,fillOpacity:.50});}
 function shape(l){
 const cfg=CONFIG[l.type];
 const a=l.points.map(p=>[p.lat,p.lng]);
@@ -222,6 +218,10 @@ box.append(d);
 });
 }
 
+function buildPresenter(){Object.values(presenterGroups).forEach(g=>map.removeLayer(g));presenterGroups={};Object.keys(CONFIG).forEach(t=>{presenterGroups[t]=L.featureGroup();layers.filter(l=>l.type===t).forEach(l=>presenterShape(l).addTo(presenterGroups[t]));});renderPresenter();}
+function renderPresenter(){const box=$('presenterList');if(!box)return;box.innerHTML='';Object.entries(CONFIG).forEach(([t,cfg])=>{const count=layers.filter(l=>l.type===t).length,row=document.createElement('label');row.className='presenterItem';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!presenterChecked[t];cb.disabled=!count;cb.onchange=()=>{presenterChecked[t]=cb.checked;if(cb.checked)presenterGroups[t].addTo(map);else map.removeLayer(presenterGroups[t]);};const sw=document.createElement('span');sw.className='presenterSwatch';sw.style.background=cfg.color;const wrap=document.createElement('div');const n=document.createElement('div');n.className='presenterName';n.textContent=cfg.name;const m=document.createElement('div');m.className='presenterMeta';m.textContent=(cfg.kind==='route'?'Ruta':'Zona')+' · '+count+' elemento'+(count===1?'':'s');wrap.append(n,m);row.append(cb,sw,wrap);box.append(row);});}
+function enterPresenter(){currentRole='presentador';$('designPanel').style.display='none';$('designLayers').style.display='none';$('presenterPanel').style.display='block';$('moduleDesign').classList.remove('active');$('modulePresenter').classList.add('active');drawing=false;if(draft){map.removeLayer(draft);draft=null}buttons();Object.values(presenterGroups).forEach(g=>map.removeLayer(g));layers.forEach(l=>map.removeLayer(l.shape));buildPresenter();setStatus('Módulo: Presentador');}
+function enterDesign(){currentRole='diseñador';$('presenterPanel').style.display='none';$('designPanel').style.display='block';$('designLayers').style.display='block';$('modulePresenter').classList.remove('active');$('moduleDesign').classList.add('active');Object.values(presenterGroups).forEach(g=>map.removeLayer(g));layers.forEach(l=>{if(l.visible)l.shape.addTo(map)});setStatus('Modo: selección');}
 function buttons(){
 $('start').disabled=drawing;
 $('finish').disabled=!drawing;
@@ -346,6 +346,8 @@ finally{e.target.value=''}
 };
 
 updateModalTypes();
+function openLogin(role){$('loginForm').classList.remove('hidden');$('loginSelected').textContent=role==='presentador'?'Acceso al módulo PRESENTADOR':'Acceso al módulo DISEÑO';$('loginPassword').value='';$('loginError').textContent='';$('loginPassword').focus();$('loginEnter').dataset.role=role;}
+document.querySelectorAll('.loginBtn').forEach(b=>b.onclick=()=>openLogin(b.dataset.role));$('loginBack').onclick=()=>{$('loginForm').classList.add('hidden')};$('loginEnter').onclick=()=>{const role=$('loginEnter').dataset.role;if($('loginPassword').value===PASSWORDS[role]){$('loginScreen').style.display='none';role==='presentador'?enterPresenter():enterDesign()}else $('loginError').textContent='Contraseña incorrecta'};$('loginPassword').onkeydown=e=>{if(e.key==='Enter')$('loginEnter').click()};$('moduleDesign').onclick=()=>{if(currentRole!=='diseñador'){$('loginScreen').style.display='flex';openLogin('diseñador')}};$('modulePresenter').onclick=()=>{if(currentRole!=='presentador'){$('loginScreen').style.display='flex';openLogin('presentador')}};$('logout').onclick=()=>{currentRole=null;$('loginScreen').style.display='flex';$('loginForm').classList.add('hidden');};$('showAll').onclick=()=>{Object.keys(CONFIG).forEach(t=>presenterChecked[t]=true);buildPresenter();Object.values(presenterGroups).forEach(g=>g.addTo(map))};$('hideAll').onclick=()=>{Object.keys(CONFIG).forEach(t=>presenterChecked[t]=false);Object.values(presenterGroups).forEach(g=>map.removeLayer(g));renderPresenter()};
 
 try{
 JSON.parse(localStorage.getItem('logisticaPapaFlorida')||'[]').forEach(r=>{
