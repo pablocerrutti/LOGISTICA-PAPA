@@ -1,0 +1,20 @@
+/********************************************************
+ LOGISTICA-PAPA
+ API PRINCIPAL
+********************************************************/
+function doGet(e){
+  e=e||{parameter:{}}; e.parameter=e.parameter||{};
+  const accion=String(e.parameter.accion||'').trim();
+  try{
+    switch(accion){
+      case 'obtenerLogisticaPapa': return json(obtenerLogisticaPapa(e));
+      case 'guardarLogisticaPapa': return json(guardarLogisticaPapa(e));
+      case 'ping': return json({ok:true,mensaje:'API LOGISTICA-PAPA funcionando correctamente.',fecha:new Date().toISOString()});
+      default: return json({ok:false,mensaje:'Acción inválida: '+accion});
+    }
+  }catch(error){
+    return json({ok:false,mensaje:error&&error.message?error.message:'Error interno del servidor.'});
+  }
+}
+function doPost(e){return doGet(e);}
+function json(obj){return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);}
