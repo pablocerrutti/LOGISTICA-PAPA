@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Operativo Florida — Acceso público</title>
+<title>Visita del Papa León XIV - Mapa Logístico — Acceso público</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box}
@@ -60,7 +60,7 @@ header{padding:9px 12px}
   <div class="loaderBox">
     <img class="logo" src="logodepartamentoabierto.jpg" alt="Intendencia Departamental de Florida">
     <div class="kicker">Intendencia Departamental de Florida</div>
-    <div class="loadingTitle">Operativo Florida</div>
+    <div class="loadingTitle">Visita del Papa León XIV - Mapa Logístico</div>
     <div class="loadingSub">Cargando mapa interactivo y operativa...</div>
     <div class="spinner"></div>
   </div>
@@ -70,7 +70,7 @@ header{padding:9px 12px}
 <aside>
 <header>
   <div class="section">Acceso público</div>
-  <div class="title">Operativo Florida</div>
+  <div class="title">Visita del Papa León XIV - Mapa Logístico</div>
   <div class="subtitle">Mapa interactivo de rutas, zonas de circulación, estacionamiento y áreas operativas.</div>
   <span class="publicBadge">INFORMACIÓN PÚBLICA</span>
 </header>
@@ -82,9 +82,10 @@ header{padding:9px 12px}
   <button class="btn primary" id="showAll">Mostrar todo</button>
   <button class="btn" id="hideAll">Ocultar todo</button>
 </div>
+<div style="padding:0 12px 8px"><button class="btn" id="exitPublic" style="width:100%">← SALIR DEL MAPA PÚBLICO</button></div>
 <div id="layerList" class="layerList"></div>
 <div id="empty" class="empty" style="display:none">El mapa público todavía no tiene capas publicadas.</div>
-<div class="footer">Intendencia Departamental de Florida · Operativo Florida</div>
+<div class="footer">Intendencia Departamental de Florida · Visita del Papa León XIV</div>
 </aside>
 <main>
 <div id="map"></div>
@@ -191,6 +192,7 @@ document.getElementById("showAll").onclick=()=>{
 Object.keys(C).forEach(t=>{if(layers.some(l=>l.type===t))addType(t);});
 document.querySelectorAll("#layerList input").forEach(x=>x.checked=true);
 };
+document.getElementById("exitPublic").onclick=()=>{sessionStorage.removeItem("logisticaPapaRole");location.href="login.html";};
 document.getElementById("hideAll").onclick=()=>{
 Object.keys(C).forEach(removeType);
 document.querySelectorAll("#layerList input").forEach(x=>x.checked=false);
