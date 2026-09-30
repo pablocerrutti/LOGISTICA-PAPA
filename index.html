@@ -1,37 +1,365 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Operativo Florida — Logística Papa</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,sans-serif;color:#17232d;background:#edf2f5}#app{height:100vh;display:grid;grid-template-columns:340px 1fr}aside{background:#fff;border-right:1px solid #d9e1e7;display:flex;flex-direction:column;min-width:0}header{padding:18px;border-bottom:1px solid #d9e1e7}.kicker{font-size:10px;font-weight:800;letter-spacing:.13em;color:#687783;text-transform:uppercase}.title{font-size:21px;font-weight:850;margin:5px 0}.subtitle{font-size:12px;color:#667784;line-height:1.45}.toolbar{padding:12px;border-bottom:1px solid #d9e1e7;display:grid;gap:8px}.row{display:flex;gap:6px}.btn{border:1px solid #d9e1e7;background:white;padding:9px;border-radius:8px;font-weight:750;cursor:pointer;font-size:12px}.primary{background:#173f67;color:white;border-color:#173f67}.btn:disabled{opacity:.4}.types{display:grid;grid-template-columns:1fr 1fr;gap:6px}.type{padding:8px 6px;text-align:left;border:1px solid #d9e1e7;border-radius:8px;background:white;font-size:11px;font-weight:750;cursor:pointer}.type.active{outline:2px solid #b8cddd}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}.instructions{font-size:11px;line-height:1.45;color:#667784;background:#f4f7f9;padding:8px;border-radius:7px}.layers{padding:12px;overflow:auto;flex:1}.section{font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#7a8790;margin-bottom:8px}.layer{display:flex;align-items:center;gap:7px;padding:9px;border:1px solid #d9e1e7;border-radius:8px;margin-bottom:7px;cursor:pointer}.layer.selected{background:#f4f8fb;border-color:#7597b2}.layer.off{opacity:.45}.swatch{width:11px;height:11px;border-radius:3px}.body{flex:1;min-width:0}.name{font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:10px;color:#667784}.icon{border:0;background:transparent;cursor:pointer;color:#687783;font-size:15px}.footer{font-size:10px;color:#667784;padding:10px;border-top:1px solid #d9e1e7;line-height:1.4}main{position:relative;min-width:0}#map{height:100%;width:100%}.badge,.status,.legend{position:absolute;z-index:500;background:#ffffffed;border:1px solid #d6dfe5;border-radius:8px;padding:9px 11px;box-shadow:0 5px 18px #1a34431a;font-size:11px;font-weight:750}.badge{top:12px;left:12px}.status{top:12px;right:12px;max-width:45%}.legend{bottom:16px;right:12px;font-size:10px;line-height:1.9}.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}.modal{display:none;position:fixed;inset:0;background:#0c1b2a66;z-index:2000;align-items:center;justify-content:center;padding:16px}.modal.open{display:flex}.card{background:white;border-radius:12px;padding:20px;width:min(420px,100%)}.card h2{margin:0 0 14px;font-size:18px}.field{display:grid;gap:5px;margin-bottom:12px}.field label{font-size:11px;font-weight:800}.field input,.field select{padding:10px;border:1px solid #d9e1e7;border-radius:7px;font:inherit}.help{font-size:11px;color:#667784;margin-bottom:14px}
-@media(max-width:650px){#app{grid-template-columns:1fr;grid-template-rows:48% 52%}main{grid-row:1}aside{grid-row:2;border-right:0;border-top:1px solid #d9e1e7}header{padding:9px 12px}.title{font-size:17px}.subtitle{font-size:11px}.toolbar{padding:8px}.instructions,.footer{display:none}.layers{padding:8px}.status{top:53px;left:10px;right:auto}.legend{bottom:7px;right:7px}}
-</style></head><body><div id="app">
-<aside><header><div class="kicker">Presentación a la prensa</div><div class="title">Operativo Florida</div><div class="subtitle">Mapa logístico para la visita del Santo Padre: zonas de exclusión, transporte y accesos restringidos.</div></header>
-<div class="toolbar"><div class="row"><button class="btn primary" id="start">＋ Nueva zona</button><button class="btn" id="finish" disabled>Finalizar</button><button class="btn" id="cancel" disabled>Cancelar</button></div>
-<div class="types"><button class="type active" data-type="exclusion"><i class="dot" style="background:#d43f3f"></i>Exclusión</button><button class="type" data-type="transport"><i class="dot" style="background:#2878c8"></i>Transporte pasajeros</button><button class="type" data-type="restricted"><i class="dot" style="background:#e28b22"></i>Acceso restringido</button><button class="type" data-type="route"><i class="dot" style="background:#3a8f61"></i>Recorrido / vía</button></div>
-<div class="instructions" id="instructions">Elegí un tipo, pulsá Nueva zona y hacé clic en el mapa para marcar puntos. Después pulsá Finalizar.</div><div class="row"><button class="btn" id="export">Exportar JSON</button><button class="btn" id="import">Importar JSON</button><input id="file" type="file" accept=".json" hidden></div></div>
-<div class="layers"><div class="section">Capas del operativo</div><div id="list"></div></div><div class="footer">Las zonas se guardan en este navegador. Exportá JSON para hacer copias de seguridad. Mapa de OpenStreetMap.</div></aside>
-<main><div id="map"></div><div class="badge">FLORIDA · URUGUAY</div><div class="status" id="status">Modo: selección</div><div class="legend"><div><i style="background:#d43f3f"></i>Exclusión</div><div><i style="background:#2878c8"></i>Transporte pasajeros</div><div><i style="background:#e28b22"></i>Acceso restringido</div><div><i style="background:#3a8f61"></i>Recorrido / vía</div></div></main></div>
-<div class="modal" id="modal"><div class="card"><h2>Guardar zona</h2><div class="help">Asigná un nombre descriptivo para identificar la zona o el recorrido.</div><div class="field"><label>Nombre</label><input id="zoneName" placeholder="Ej.: Perímetro de exclusión central"></div><div class="field"><label>Tipo</label><select id="zoneType"><option value="exclusion">Zona de exclusión (polígono)</option><option value="transport">Transporte de pasajeros (línea)</option><option value="restricted">Acceso restringido (polígono)</option><option value="route">Recorrido / vía (línea)</option></select></div><div class="row"><button class="btn" id="back">Volver</button><button class="btn primary" id="save">Guardar zona</button></div></div></div>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,sans-serif;color:#17232d;background:#edf2f5}
+#app{height:100vh;display:grid;grid-template-columns:350px 1fr}
+aside{background:#fff;border-right:1px solid #d9e1e7;display:flex;flex-direction:column;min-width:0}
+header{padding:18px;border-bottom:1px solid #d9e1e7}
+.kicker{font-size:10px;font-weight:800;letter-spacing:.13em;color:#687783;text-transform:uppercase}
+.title{font-size:21px;font-weight:850;margin:5px 0}
+.subtitle{font-size:12px;color:#667784;line-height:1.45}
+.toolbar{padding:12px;border-bottom:1px solid #d9e1e7;display:grid;gap:8px}
+.row{display:flex;gap:6px}
+.btn{border:1px solid #d9e1e7;background:white;padding:9px;border-radius:8px;font-weight:750;cursor:pointer;font-size:12px}
+.primary{background:#173f67;color:white;border-color:#173f67}
+.btn:disabled{opacity:.4}
+.type-title{font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#7a8790;margin-top:2px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.type{padding:8px 6px;text-align:left;border:1px solid #d9e1e7;border-radius:8px;background:white;font-size:10.5px;font-weight:750;cursor:pointer}
+.type.active{outline:2px solid #b8cddd;background:#f7fafc}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.instructions{font-size:11px;line-height:1.45;color:#667784;background:#f4f7f9;padding:8px;border-radius:7px}
+.layers{padding:12px;overflow:auto;flex:1}
+.section{font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#7a8790;margin-bottom:8px}
+.layer{display:flex;align-items:center;gap:7px;padding:9px;border:1px solid #d9e1e7;border-radius:8px;margin-bottom:7px;cursor:pointer}
+.layer.selected{background:#f4f8fb;border-color:#7597b2}
+.layer.off{opacity:.45}
+.swatch{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.body{flex:1;min-width:0}
+.name{font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{font-size:10px;color:#667784}
+.icon{border:0;background:transparent;cursor:pointer;color:#687783;font-size:15px}
+.footer{font-size:10px;color:#667784;padding:10px;border-top:1px solid #d9e1e7;line-height:1.4}
+main{position:relative;min-width:0}
+#map{height:100%;width:100%}
+.badge,.status,.legend{position:absolute;z-index:1000;background:#ffffffed;border:1px solid #d6dfe5;border-radius:8px;padding:9px 11px;box-shadow:0 5px 18px #1a34431a;font-size:11px;font-weight:750}
+.badge{top:12px;left:12px}
+.status{top:12px;right:12px;max-width:48%}
+.legend{bottom:16px;right:12px;font-size:10px;line-height:1.9}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.modal{display:none;position:fixed;inset:0;background:#0c1b2a66;z-index:2000;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.card{background:white;border-radius:12px;padding:20px;width:min(440px,100%)}
+.card h2{margin:0 0 14px;font-size:18px}
+.field{display:grid;gap:5px;margin-bottom:12px}
+.field label{font-size:11px;font-weight:800}
+.field input,.field select{padding:10px;border:1px solid #d9e1e7;border-radius:7px;font:inherit}
+.help{font-size:11px;color:#667784;margin-bottom:14px}
+@media(max-width:650px){
+#app{grid-template-columns:1fr;grid-template-rows:48% 52%}
+main{grid-row:1}
+aside{grid-row:2;border-right:0;border-top:1px solid #d9e1e7}
+header{padding:9px 12px}.title{font-size:17px}.subtitle{font-size:11px}
+.toolbar{padding:8px}.instructions,.footer{display:none}.layers{padding:8px}
+.status{top:53px;left:10px;right:auto}.legend{bottom:7px;right:7px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<aside>
+<header>
+<div class="kicker">Presentación a la prensa</div>
+<div class="title">Operativo Florida</div>
+<div class="subtitle">Mapa logístico para la visita del Santo Padre: rutas operativas, zonas de exclusión, estacionamiento y descenso de pasajeros.</div>
+</header>
+
+<div class="toolbar">
+<div class="row">
+<button class="btn primary" id="start">＋ Nueva capa</button>
+<button class="btn" id="finish" disabled>Finalizar</button>
+<button class="btn" id="cancel" disabled>Cancelar</button>
+</div>
+
+<div class="type-title">Rutas operativas — líneas</div>
+<div class="types" id="routeTypes">
+<button class="type active" data-type="route_pontifice"><i class="dot" style="background:#e00000"></i>Sumo Pontífice</button>
+<button class="type" data-type="route_intendente"><i class="dot" style="background:#f28c00"></i>Intendente departamental</button>
+<button class="type" data-type="route_excursiones"><i class="dot" style="background:#ffd400"></i>Ómnibus / micros excursiones</button>
+<button class="type" data-type="route_interdepartamental"><i class="dot" style="background:#0066ff"></i>Ómnibus interdepartamentales</button>
+</div>
+
+<div class="type-title">Zonas operativas — polígonos</div>
+<div class="types" id="zoneTypes">
+<button class="type" data-type="zone_exclusion"><i class="dot" style="background:#000"></i>Exclusión · solo peatonal</button>
+<button class="type" data-type="zone_estacionamiento"><i class="dot" style="background:#16a34a"></i>Estacionamiento permitido</button>
+<button class="type" data-type="zone_excursiones"><i class="dot" style="background:#ffd400"></i>Estacionamiento ómnibus / micros</button>
+<button class="type" data-type="zone_descenso"><i class="dot" style="background:#22cfe5"></i>Descenso de pasajeros únicamente</button>
+</div>
+
+<div class="instructions" id="instructions">Elegí una ruta o zona, pulsá Nueva capa y hacé clic en el mapa para marcar puntos. Las rutas requieren 2 puntos; las zonas, 3.</div>
+<div class="row"><button class="btn" id="export">Exportar JSON</button><button class="btn" id="import">Importar JSON</button><input id="file" type="file" accept=".json" hidden></div>
+</div>
+
+<div class="layers">
+<div class="section">Capas del operativo</div>
+<div id="list"></div>
+</div>
+<div class="footer">Las capas se guardan en este navegador. Exportá JSON para copias de seguridad. Las rutas se dibujan sobre las zonas para permanecer visibles aunque exista superposición. Mapa de OpenStreetMap.</div>
+</aside>
+
+<main>
+<div id="map"></div>
+<div class="badge">FLORIDA · URUGUAY</div>
+<div class="status" id="status">Modo: selección</div>
+<div class="legend">
+<div><i style="background:#e00000"></i>Ruta Sumo Pontífice</div>
+<div><i style="background:#f28c00"></i>Ruta Intendente</div>
+<div><i style="background:#ffd400"></i>Ruta excursiones</div>
+<div><i style="background:#0066ff"></i>Ruta interdepartamental</div>
+<div><i style="background:#000"></i>Exclusión / peatonal</div>
+<div><i style="background:#16a34a"></i>Estacionamiento permitido</div>
+<div><i style="background:#ffd400"></i>Estacionamiento ómnibus / micros</div>
+<div><i style="background:#22cfe5"></i>Descenso únicamente</div>
+</div>
+</main>
+</div>
+
+<div class="modal" id="modal">
+<div class="card">
+<h2>Guardar capa</h2>
+<div class="help">Podés conservar el nombre propuesto o cambiarlo por uno más específico.</div>
+<div class="field"><label>Nombre</label><input id="zoneName"></div>
+<div class="field"><label>Tipo</label><select id="zoneType"></select></div>
+<div class="row"><button class="btn" id="back">Volver</button><button class="btn primary" id="save">Guardar capa</button></div>
+</div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-(()=>{const C={exclusion:'#d43f3f',transport:'#2878c8',restricted:'#e28b22',route:'#3a8f61'},N={exclusion:'Zona de exclusión',transport:'Transporte de pasajeros',restricted:'Acceso restringido',route:'Recorrido / vía'},lines=['transport','route'],map=L.map('map').setView([-34.0958,-56.2142],14);
+(()=>{
+
+const CONFIG={
+route_pontifice:{name:'Ruta de ingreso y salida Sumo Pontífice',color:'#e00000',kind:'route',weight:8},
+route_intendente:{name:'Ruta de ingreso y salida Intendente departamental',color:'#f28c00',kind:'route',weight:7},
+route_excursiones:{name:'Ruta de ingreso y egreso de ómnibus / micros de excursiones',color:'#ffd400',kind:'route',weight:7},
+route_interdepartamental:{name:'Ruta de ingreso y egreso de ómnibus de empresas interdepartamentales de línea',color:'#0066ff',kind:'route',weight:7},
+zone_exclusion:{name:'Zona de exclusión · solo peatonal',color:'#000000',kind:'zone'},
+zone_estacionamiento:{name:'Zona de estacionamiento permitido',color:'#16a34a',kind:'zone'},
+zone_excursiones:{name:'Zona de estacionamiento ómnibus / micros de excursiones',color:'#ffd400',kind:'zone'},
+zone_descenso:{name:'Zona de descenso de pasajeros únicamente',color:'#22cfe5',kind:'zone'}
+};
+
+const map=L.map('map',{preferCanvas:true}).setView([-34.0958,-56.2142],14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap'}).addTo(map);
-let layers=[],drawing=false,pts=[],type='exclusion',draft=null,selected=null;const $=x=>document.getElementById(x),setStatus=x=>$('status').textContent=x;
-function shape(l){let a=l.points.map(p=>[p.lat,p.lng]);return lines.includes(l.type)?L.polyline(a,{color:C[l.type],weight:l.type==='transport'?7:5,opacity:.88,lineCap:'round'}):L.polygon(a,{color:C[l.type],weight:2,fillColor:C[l.type],fillOpacity:.22})}
-function persist(){localStorage.setItem('logisticaPapaFlorida',JSON.stringify(layers.map(({id,name,type,points,visible})=>({id,name,type,points,visible}))))}
-function fit(l){if(l&&l.points.length)map.fitBounds(L.latLngBounds(l.points.map(p=>[p.lat,p.lng])).pad(.2),{maxZoom:17})}
-function render(){let box=$('list');box.innerHTML='';if(!layers.length){box.innerHTML='<div style="font-size:12px;color:#77858f">Todavía no hay zonas. Creá la primera con Nueva zona.</div>';return}layers.forEach(l=>{let d=document.createElement('div');d.className='layer'+(l.visible?'':' off')+(selected===l.id?' selected':'');let sw=document.createElement('span');sw.className='swatch';sw.style.background=C[l.type];let b=document.createElement('div');b.className='body';let n=document.createElement('div');n.className='name';n.textContent=l.name;let m=document.createElement('div');m.className='meta';m.textContent=N[l.type]+' · '+l.points.length+' puntos';b.append(n,m);let eye=document.createElement('button');eye.className='icon';eye.textContent=l.visible?'●':'○';eye.title='Mostrar/ocultar';eye.onclick=e=>{e.stopPropagation();l.visible=!l.visible;if(l.visible)l.shape.addTo(map);else map.removeLayer(l.shape);persist();render()};let del=document.createElement('button');del.className='icon';del.textContent='×';del.title='Eliminar';del.onclick=e=>{e.stopPropagation();if(confirm('¿Eliminar '+l.name+'?')){map.removeLayer(l.shape);layers=layers.filter(x=>x.id!==l.id);if(selected===l.id)selected=null;persist();render()}};d.append(sw,b,eye,del);d.onclick=()=>{selected=l.id;render();fit(l)};box.append(d)})}
-function buttons(){$('start').disabled=drawing;$('finish').disabled=!drawing;$('cancel').disabled=!drawing}
-function begin(){drawing=true;pts=[];type=document.querySelector('.type.active').dataset.type;draft=L.layerGroup().addTo(map);buttons();setStatus('Dibujando: clic para marcar puntos');$('instructions').textContent='Marcá los puntos en el mapa. Polígonos: mínimo 3 puntos. Recorridos: mínimo 2 puntos.'}
-function draftDraw(){draft.clearLayers();pts.forEach(p=>L.circleMarker([p.lat,p.lng],{radius:5,color:'#173f67',weight:2,fillColor:'#fff',fillOpacity:1}).addTo(draft));if(pts.length>1){let a=pts.map(p=>[p.lat,p.lng]);if(lines.includes(type))L.polyline(a,{color:C[type],weight:4,dashArray:'6 5'}).addTo(draft);else if(pts.length>2)L.polygon(a,{color:C[type],fillColor:C[type],fillOpacity:.15,dashArray:'5 4'}).addTo(draft)}}
-function cancel(){drawing=false;if(draft)map.removeLayer(draft);draft=null;pts=[];buttons();setStatus('Modo: selección');$('instructions').textContent='Elegí un tipo, pulsá Nueva zona y hacé clic en el mapa para marcar puntos. Después pulsá Finalizar.'}
-function finish(){if(pts.length<(lines.includes(type)?2:3)){alert(lines.includes(type)?'Marcá al menos 2 puntos.':'Marcá al menos 3 puntos para una zona.');return}$('zoneType').value=type;$('zoneName').value='';$('modal').classList.add('open')}
-map.on('click',e=>{if(!drawing)return;pts.push({lat:e.latlng.lat,lng:e.latlng.lng});draftDraw();setStatus('Puntos marcados: '+pts.length)});
-document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{document.querySelectorAll('.type').forEach(x=>x.classList.remove('active'));b.classList.add('active');type=b.dataset.type;if(drawing){pts=[];draftDraw()}});
-$('start').onclick=begin;$('finish').onclick=finish;$('cancel').onclick=cancel;$('back').onclick=()=>$('modal').classList.remove('open');
-$('save').onclick=()=>{let l={id:'z'+Date.now(),name:$('zoneName').value.trim()||'Zona '+(layers.length+1),type:$('zoneType').value,points:pts.slice(),visible:true};l.shape=shape(l).addTo(map);l.shape.on('click',()=>{selected=l.id;render();fit(l)});layers.push(l);selected=l.id;$('modal').classList.remove('open');cancel();persist();render();fit(l)};
-$('export').onclick=()=>{let blob=new Blob([JSON.stringify({app:'Logistica Papa Florida',layers:layers.map(({id,name,type,points,visible})=>({id,name,type,points,visible}))},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='operativo-florida-zonas.json';a.click();URL.revokeObjectURL(url)};
-$('import').onclick=()=>$('file').click();$('file').onchange=async e=>{try{let data=JSON.parse(await e.target.files[0].text()),arr=Array.isArray(data)?data:data.layers;if(!Array.isArray(arr))throw 0;if(!confirm('Esto reemplazará las capas actuales. ¿Continuar?'))return;layers.forEach(l=>map.removeLayer(l.shape));layers=[];arr.forEach(r=>{if(!C[r.type]||!Array.isArray(r.points))return;let l={...r,visible:r.visible!==false};l.shape=shape(l);if(l.visible)l.shape.addTo(map);l.shape.on('click',()=>{selected=l.id;render();fit(l)});layers.push(l)});persist();render();if(layers.length)fit(layers[0])}catch(err){alert('No se pudo importar. Elegí un JSON exportado por esta aplicación.')}finally{e.target.value=''}};
-try{JSON.parse(localStorage.getItem('logisticaPapaFlorida')||'[]').forEach(r=>{if(!C[r.type]||!Array.isArray(r.points))return;let l={...r,visible:r.visible!==false};l.shape=shape(l);if(l.visible)l.shape.addTo(map);l.shape.on('click',()=>{selected=l.id;render();fit(l)});layers.push(l)})}catch(e){}render();buttons()})();
-</script></body></html>
+
+/* Las zonas quedan en un pane inferior y las rutas en uno superior.
+   Así una ruta nunca queda tapada por el relleno de un polígono. */
+map.createPane('operationalZones');
+map.getPane('operationalZones').style.zIndex=410;
+map.createPane('operationalRoutes');
+map.getPane('operationalRoutes').style.zIndex=650;
+map.createPane('draftPane');
+map.getPane('draftPane').style.zIndex=700;
+
+let layers=[],drawing=false,pts=[],type='route_pontifice',draft=null,selected=null;
+const $=id=>document.getElementById(id);
+const setStatus=x=>$('status').textContent=x;
+
+function isRoute(t){return CONFIG[t]&&CONFIG[t].kind==='route'}
+
+function shape(l){
+const cfg=CONFIG[l.type];
+const a=l.points.map(p=>[p.lat,p.lng]);
+if(cfg.kind==='route'){
+return L.polyline(a,{
+pane:'operationalRoutes',
+color:cfg.color,
+weight:cfg.weight,
+opacity:.98,
+lineCap:'round',
+lineJoin:'round'
+});
+}
+return L.polygon(a,{
+pane:'operationalZones',
+color:cfg.color,
+weight:3,
+opacity:.95,
+fillColor:cfg.color,
+fillOpacity:.50
+});
+}
+
+function persist(){
+localStorage.setItem('logisticaPapaFlorida',JSON.stringify(
+layers.map(({id,name,type,points,visible})=>({id,name,type,points,visible}))
+));
+}
+
+function fit(l){
+if(l&&l.points.length)map.fitBounds(L.latLngBounds(l.points.map(p=>[p.lat,p.lng])).pad(.2),{maxZoom:17});
+}
+
+function render(){
+const box=$('list');box.innerHTML='';
+if(!layers.length){
+box.innerHTML='<div style="font-size:12px;color:#77858f">Todavía no hay capas. Creá la primera con Nueva capa.</div>';
+return;
+}
+layers.forEach(l=>{
+const cfg=CONFIG[l.type];
+const d=document.createElement('div');
+d.className='layer'+(l.visible?'':' off')+(selected===l.id?' selected':'');
+const sw=document.createElement('span');sw.className='swatch';sw.style.background=cfg.color;
+const b=document.createElement('div');b.className='body';
+const n=document.createElement('div');n.className='name';n.textContent=l.name;
+const m=document.createElement('div');m.className='meta';m.textContent=(cfg.kind==='route'?'Ruta':'Zona')+' · '+l.points.length+' puntos';
+b.append(n,m);
+const eye=document.createElement('button');eye.className='icon';eye.textContent=l.visible?'●':'○';eye.title='Mostrar/ocultar';
+eye.onclick=e=>{e.stopPropagation();l.visible=!l.visible;if(l.visible)l.shape.addTo(map);else map.removeLayer(l.shape);persist();render()};
+const del=document.createElement('button');del.className='icon';del.textContent='×';del.title='Eliminar';
+del.onclick=e=>{e.stopPropagation();if(confirm('¿Eliminar '+l.name+'?')){map.removeLayer(l.shape);layers=layers.filter(x=>x.id!==l.id);if(selected===l.id)selected=null;persist();render()}};
+d.append(sw,b,eye,del);
+d.onclick=()=>{selected=l.id;render();fit(l)};
+box.append(d);
+});
+}
+
+function buttons(){
+$('start').disabled=drawing;
+$('finish').disabled=!drawing;
+$('cancel').disabled=!drawing;
+}
+
+function updateModalTypes(){
+const select=$('zoneType');select.innerHTML='';
+Object.entries(CONFIG).forEach(([key,cfg])=>{
+const opt=document.createElement('option');opt.value=key;opt.textContent=cfg.name;select.appendChild(opt);
+});
+}
+
+function begin(){
+drawing=true;pts=[];
+type=document.querySelector('.type.active').dataset.type;
+draft=L.layerGroup().addTo(map);
+buttons();
+setStatus('Dibujando: clic para marcar puntos');
+$('instructions').textContent=isRoute(type)?'Marcá el recorrido siguiendo las calles. Cada clic agrega un punto; mínimo 2 puntos.':'Marcá el perímetro de la zona. Cada clic agrega un vértice; mínimo 3 puntos.';
+}
+
+function draftDraw(){
+if(!draft)return;
+draft.clearLayers();
+pts.forEach(p=>L.circleMarker([p.lat,p.lng],{
+pane:'draftPane',radius:5,color:'#173f67',weight:2,fillColor:'#fff',fillOpacity:1
+}).addTo(draft));
+if(pts.length>1){
+const a=pts.map(p=>[p.lat,p.lng]);
+if(isRoute(type)){
+L.polyline(a,{pane:'draftPane',color:CONFIG[type].color,weight:4,dashArray:'7 6',opacity:.9}).addTo(draft);
+}else if(pts.length>2){
+L.polygon(a,{pane:'draftPane',color:CONFIG[type].color,weight:2,fillColor:CONFIG[type].color,fillOpacity:.18,dashArray:'5 4'}).addTo(draft);
+}
+}
+}
+
+function cancel(){
+drawing=false;
+if(draft)map.removeLayer(draft);
+draft=null;pts=[];
+buttons();setStatus('Modo: selección');
+$('instructions').textContent='Elegí una ruta o zona, pulsá Nueva capa y hacé clic en el mapa para marcar puntos. Las rutas requieren 2 puntos; las zonas, 3.';
+}
+
+function finish(){
+const min=isRoute(type)?2:3;
+if(pts.length<min){alert(isRoute(type)?'Marcá al menos 2 puntos para la ruta.':'Marcá al menos 3 puntos para la zona.');return}
+$('zoneType').value=type;
+$('zoneName').value=CONFIG[type].name;
+$('modal').classList.add('open');
+}
+
+map.on('click',e=>{
+if(!drawing)return;
+pts.push({lat:e.latlng.lat,lng:e.latlng.lng});
+draftDraw();
+setStatus('Puntos marcados: '+pts.length);
+});
+
+document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('.type').forEach(x=>x.classList.remove('active'));
+b.classList.add('active');
+type=b.dataset.type;
+if(drawing){pts=[];draftDraw();}
+});
+
+$('start').onclick=begin;
+$('finish').onclick=finish;
+$('cancel').onclick=cancel;
+$('back').onclick=()=>{$('modal').classList.remove('open')};
+
+$('save').onclick=()=>{
+const selectedType=$('zoneType').value;
+const l={
+id:'z'+Date.now(),
+name:$('zoneName').value.trim()||CONFIG[selectedType].name,
+type:selectedType,
+points:pts.slice(),
+visible:true
+};
+l.shape=shape(l).addTo(map);
+l.shape.on('click',()=>{selected=l.id;render();fit(l)});
+layers.push(l);
+selected=l.id;
+$('modal').classList.remove('open');
+cancel();
+persist();render();fit(l);
+};
+
+$('export').onclick=()=>{
+const blob=new Blob([JSON.stringify({
+app:'Logistica Papa Florida',
+version:2,
+layers:layers.map(({id,name,type,points,visible})=>({id,name,type,points,visible}))
+},null,2)],{type:'application/json'});
+const url=URL.createObjectURL(blob),a=document.createElement('a');
+a.href=url;a.download='operativo-florida-capas.json';a.click();URL.revokeObjectURL(url);
+};
+
+$('import').onclick=()=>$('file').click();
+
+$('file').onchange=async e=>{
+try{
+const data=JSON.parse(await e.target.files[0].text());
+const arr=Array.isArray(data)?data:data.layers;
+if(!Array.isArray(arr))throw new Error('Formato');
+if(!confirm('Esto reemplazará las capas actuales. ¿Continuar?'))return;
+layers.forEach(l=>map.removeLayer(l.shape));layers=[];
+arr.forEach(r=>{
+if(!CONFIG[r.type]||!Array.isArray(r.points))return;
+const l={...r,visible:r.visible!==false};
+l.shape=shape(l);
+if(l.visible)l.shape.addTo(map);
+l.shape.on('click',()=>{selected=l.id;render();fit(l)});
+layers.push(l);
+});
+persist();render();if(layers.length)fit(layers[0]);
+}catch(err){alert('No se pudo importar. Elegí un JSON exportado por esta aplicación.')}
+finally{e.target.value=''}
+};
+
+updateModalTypes();
+
+try{
+JSON.parse(localStorage.getItem('logisticaPapaFlorida')||'[]').forEach(r=>{
+if(!CONFIG[r.type]||!Array.isArray(r.points))return;
+const l={...r,visible:r.visible!==false};
+l.shape=shape(l);
+if(l.visible)l.shape.addTo(map);
+l.shape.on('click',()=>{selected=l.id;render();fit(l)});
+layers.push(l);
+});
+}catch(e){}
+
+render();buttons();
+})();
+</script>
+</body>
+</html>
