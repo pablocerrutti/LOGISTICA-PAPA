@@ -182,8 +182,11 @@ layers.push({...r,type:ct});
 }
 async function loadData(){
 try{
-const local=JSON.parse(localStorage.getItem("logisticaPapaFlorida")||"[]");
-if(Array.isArray(local)&&local.length){readData(local);return;}
+const api="https://script.google.com/macros/s/AKfycbzYU8xREGRuJ3-8ZrK-dbYUZNzVBhPiIceVWU3OftmxvO6fNCBFcFwrnurmWofjkFxR/exec?accion=obtenerLogisticaPapa";
+const r=await fetch(api,{cache:"no-store",redirect:"follow"});
+if(r.ok){const d=await r.json();if(d&&d.ok&&Array.isArray(d.datos)){readData(d.datos);return;}}
+}catch(e){console.warn("No se pudo consultar la hoja del SGT",e);}
+try{
 const response=await fetch("operativo-florida-public.json",{cache:"no-store"});
 if(response.ok)readData(await response.json());
 }catch(e){console.warn("No se pudo cargar la información pública",e);}
