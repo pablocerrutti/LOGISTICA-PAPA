@@ -25,7 +25,7 @@ function hojaLogisticaPapa_(){
 function aplicarInformacionesLogisticaPapa(){
   const sh=hojaLogisticaPapa_();
   const info={
-    'route_excursiones':'Uso exclusivo: ingreso y egreso de ómnibus y micros de excursiones.',
+    'route_excursiones':'Uso exclusivo: ingreso y egreso de ómnibus y micros de excursiones. Prohibido detenerse o estacionarse; busque la zona designada para tal fin.',
     'zone_excursiones':'Solo ómnibus y micros de excursiones. Prohibido estacionar automóviles.',
     'route_interdepartamental':'Uso exclusivo: ingreso y egreso de ómnibus interdepartamentales de línea.',
     'route_pontifice':'Uso exclusivo: ingreso y salida del Sumo Pontífice. Mantener totalmente despejada.',
