@@ -15,27 +15,101 @@ function applyRows(rows,addToMap=design){
 }
 async function save(){
  if(!cloudReady&&cloudLoadPromise) await cloudLoadPromise;
- if(!cloudReady){console.error("Google Sheets todavía no está cargado; no se sobrescribirá la información.");return false}
+ if(!cloudReady){
+  console.error("Google Sheets todavía no está cargado; no se sobrescribirá la información.");
+  return false;
+ }
  const clean=cleanLayers();
  ++saveSeq;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
   try{
-   const r=await fetch(API_URL+"?t="+Date.now(),{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({accion:"guardarLogisticaPapa",datos:JSON.stringify(clean),usuario:"LOGISTICA-PAPA"}),cache:"no-store"});
-   const t=await r.text();let x=null;try{x=JSON.parse(t)}catch(_){}
-   if(!r.ok||!x||!x.ok)throw new Error((x&&x.mensaje)||"No se pudo guardar en Google Sheets");
-   const vr=await fetch(API_URL+"?accion=obtenerLogisticaPapa&t="+Date.now(),{cache:"no-store"});
-   const vd=await vr.json();
-   let saved=vd&&vd.datos;
-   if(typeof saved==="string"){try{saved=JSON.parse(saved)}catch(_){saved=[]}}
-   if(!Array.isArray(saved)||saved.length!==clean.length)throw new Error("Google Sheets no confirmó todas las rutas y zonas guardadas.");
+   const r=await fetch(API_URL+"?t="+Date.now(),{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+    body:new URLSearchParams({
+     accion:"guardarLogisticaPapa",
+     datos:JSON.stringify(clean),
+     usuario:"LOGISTICA-PAPA"
+    }),
+    cache:"no-store",
+    redirect:"follow"
+   });
+
+   const postText=await r.text();
+   let x=null;
+   try{x=JSON.parse(postText)}catch(_){}
+
+   if(!r.ok||!x||!x.ok){
+    const detalle=x&&x.mensaje
+      ? x.mensaje
+      : (postText&&postText.trim().startsWith("<")
+        ? "Google Apps Script devolvió una página HTML en lugar de una respuesta JSON al guardar."
+        : "No se pudo guardar en Google Sheets.");
+    throw new Error(detalle);
+   }
+
+   /*
+    * Confirmación independiente desde Google Sheets.
+    * Se lee primero como texto para evitar el error
+    * "Unexpected token '<'" cuando un proxy/redirección devuelve HTML.
+    */
+   const vr=await fetch(
+    API_URL+"?accion=obtenerLogisticaPapa&t="+Date.now(),
+    {cache:"no-store",redirect:"follow"}
+   );
+   const verifyText=await vr.text();
+
+   let vd=null;
+   try{vd=JSON.parse(verifyText)}catch(_){
+    const preview=verifyText
+      ? verifyText.replace(/\\s+/g," ").trim().slice(0,180)
+      : "(respuesta vacía)";
+    throw new Error(
+      "Google Sheets guardó la información, pero la respuesta de confirmación no fue JSON. "+
+      "Respuesta recibida: "+preview
+    );
+   }
+
+   if(!vr.ok||!vd||vd.ok!==true){
+    throw new Error(
+      (vd&&vd.mensaje)||
+      "Google Sheets no confirmó correctamente el guardado."
+    );
+   }
+
+   let saved=vd.datos;
+   if(typeof saved==="string"){
+    try{saved=JSON.parse(saved)}catch(_){saved=[]}
+   }
+
+   if(!Array.isArray(saved)||saved.length!==clean.length){
+    throw new Error(
+      "Google Sheets no confirmó todas las rutas y zonas guardadas. "+
+      "Enviadas: "+clean.length+" · Confirmadas: "+(Array.isArray(saved)?saved.length:0)
+    );
+   }
+
    const expected=clean.map(l=>String(l.id)).sort().join("|");
    const received=saved.map(l=>String(l.id)).sort().join("|");
-   if(expected!==received)throw new Error("Google Sheets confirmó una lista de rutas/zonas diferente a la enviada.");
+
+   if(expected!==received){
+    throw new Error(
+     "Google Sheets confirmó una lista de rutas/zonas diferente a la enviada."
+    );
+   }
+
    return true;
+
   }catch(e){
    console.error("Guardado Logistica Papa",e);
-   try{alert("NO SE PUDO GUARDAR EN GOOGLE SHEETS.\\n\\n"+(e&&e.message?e.message:"Error desconocido")+"\\n\\nLa capa quedó en pantalla, pero NO se considerará guardada hasta que Google Sheets confirme el guardado.");}catch(_){}
-   return false
+   try{
+    alert(
+     "NO SE PUDO GUARDAR EN GOOGLE SHEETS.\\n\\n"+
+     (e&&e.message?e.message:"Error desconocido")+
+     "\\n\\nLa capa quedó en pantalla, pero NO se considerará guardada hasta que Google Sheets confirme el guardado."
+    );
+   }catch(_){}
+   return false;
   }
  });
  return saveQueue;
