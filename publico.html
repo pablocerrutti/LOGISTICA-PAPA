@@ -57,7 +57,7 @@ header{padding:9px 12px}
 <style>
 @media(max-width:900px){#app{grid-template-columns:1fr;grid-template-rows:minmax(52vh,58vh) minmax(42vh,48vh)}aside{grid-row:2;border-right:0;border-top:1px solid #d9e1e7;min-height:0}.layerList{max-height:26vh}.legend{max-width:min(78vw,360px);font-size:9px}.badge,.status{font-size:10px;padding:7px 9px}.title{font-size:clamp(17px,4vw,22px)}}@media(max-width:520px){#app{grid-template-rows:55vh 45vh}.legend{display:none}.badge{top:8px;left:8px}.status{top:8px;right:8px;left:auto}.actions{flex-wrap:wrap}.actions .btn{flex:1;min-width:120px}.info{padding:8px}.infoText{font-size:10px}.layerList{max-height:25vh}.layerItem{margin:0 8px 6px;padding:8px}.layerName{font-size:10px}.layerMeta{font-size:9px}.footer{padding:7px}}
 @media(min-width:901px) and (max-width:1200px){#app{grid-template-columns:300px 1fr}.title{font-size:19px}}
-</style></head>
+@media(max-width:700px){#mobileMenuBtn{display:flex;position:fixed;top:10px;left:10px;z-index:3000;width:44px;height:44px;border:1px solid #d6dfe5;border-radius:10px;background:#173f67;box-shadow:0 4px 14px #0003;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer}#mobileMenuBtn span{width:21px;height:2px;background:#fff;border-radius:2px}#mobileMenuBackdrop{display:none;position:fixed;inset:0;background:#0005;z-index:2100}#mobileMenuBackdrop.open{display:block}#app{display:block;height:100%;position:relative}#app>aside{position:fixed;top:0;left:0;bottom:0;width:min(88vw,350px);z-index:2200;transform:translateX(-105%);transition:transform .25s ease;box-shadow:8px 0 24px #0003;overflow:auto}#app>aside.open{transform:translateX(0)}#app>main{position:absolute;inset:0}#app>main #map{height:100%;min-height:100%}.badge{top:10px;left:64px}.status{top:10px;right:10px}.legend{display:none}body.menu-open{overflow:hidden}.publicBadge{margin-top:6px}.info{padding-top:10px}}@media(min-width:701px){#mobileMenuBtn,#mobileMenuBackdrop{display:none}}\n</style></head>
 <body>
 <div id="loading">
   <div class="loaderBox">
@@ -69,6 +69,7 @@ header{padding:9px 12px}
   </div>
 </div>
 
+<button id="mobileMenuBtn" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button><div id="mobileMenuBackdrop"></div>
 <div id="app">
 <aside>
 <header>
@@ -223,6 +224,11 @@ async function startPublicMap(){
 }
 window.addEventListener("resize",()=>map.invalidateSize(true));
 window.addEventListener("orientationchange",()=>setTimeout(()=>map.invalidateSize(true),350));
+const menuBtn=document.getElementById("mobileMenuBtn"),side=document.querySelector("#app>aside"),backdrop=document.getElementById("mobileMenuBackdrop");
+function toggleMenu(open){side.classList.toggle("open",open);backdrop.classList.toggle("open",open);document.body.classList.toggle("menu-open",open);menuBtn.setAttribute("aria-expanded",open?"true":"false");setTimeout(()=>map.invalidateSize(true),280)}
+menuBtn.onclick=()=>toggleMenu(!side.classList.contains("open"));backdrop.onclick=()=>toggleMenu(false);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")toggleMenu(false)});
+document.getElementById("layerList").addEventListener("change",()=>{if(window.innerWidth<=700)toggleMenu(false)});
 startPublicMap();
 })();
 </script>
