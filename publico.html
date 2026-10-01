@@ -173,15 +173,17 @@ const a=Array.isArray(data)?data:data?.layers;
 if(!Array.isArray(a))return;
 a.forEach(r=>{
 const ct=canonicalType(r);
-if(!ct)return;const paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!paths.some(p=>Array.isArray(p)&&p.length>=2))return;layers.push({...r,type:ct,paths:paths,points:paths[0]});
+if(!ct)return;const paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!paths.some(p=>Array.isArray(p)&&p.length>=2))return;layers.push({...r,type:ct,name:ct==="route_intendente"?"Ruta Alternativa":(String(r.name||"").trim()||C[ct].name),paths:paths,points:paths[0]});
 });
 }
 async function loadData(){
 try{
 const api="https://script.google.com/macros/s/AKfycbwuH_br7N-DhY6DIqn8v9IfWrXQ4uvswqQh4WKKQd9RnGn2sM5gkeV8HF1_h2KU9njo/exec?accion=obtenerLogisticaPapa";
 const r=await fetch(api,{cache:"no-store",redirect:"follow"});
-if(r.ok){
-  const d=await r.json();
+const raw=await r.text();
+let d=null;
+try{d=JSON.parse(raw);}catch(_){console.warn("Respuesta no JSON de Google Sheets en móvil:",raw.slice(0,180));}
+if(r.ok&&d){
   if(d&&d.ok){
     let datos=d.datos;
     if(typeof datos==="string"){
@@ -189,12 +191,13 @@ if(r.ok){
     }
     if(Array.isArray(datos)){
       readData(datos);
-      return;
+      return true;
     }
   }
 }
 }catch(e){console.warn("No se pudo consultar Google Sheets",e);}
 console.warn("El mapa público no mostrará una copia local: Google Sheets es la única fuente de datos.");
+return false;
 }
 document.getElementById("showAll").onclick=()=>{
 Object.keys(C).forEach(t=>{if(layers.some(l=>l.type===t))addType(t);});
@@ -205,10 +208,22 @@ document.getElementById("hideAll").onclick=()=>{
 Object.keys(C).forEach(removeType);
 document.querySelectorAll("#layerList input").forEach(x=>x.checked=false);
 };
-loadData().then(()=>{
-renderList();
-setTimeout(()=>document.getElementById("loading").classList.add("hide"),1400);
-});
+async function startPublicMap(){
+  let ok=false;
+  for(let intento=1;intento<=3&&!ok;intento++){
+    ok=await loadData();
+    if(!ok&&intento<3)await new Promise(resolve=>setTimeout(resolve,900));
+  }
+  renderList();
+  setTimeout(()=>map.invalidateSize(true),80);
+  setTimeout(()=>map.invalidateSize(true),500);
+  setTimeout(()=>map.invalidateSize(true),1200);
+  setTimeout(()=>document.getElementById("loading").classList.add("hide"),ok?700:1200);
+  if(!ok)document.getElementById("empty").style.display="block";
+}
+window.addEventListener("resize",()=>map.invalidateSize(true));
+window.addEventListener("orientationchange",()=>setTimeout(()=>map.invalidateSize(true),350));
+startPublicMap();
 })();
 </script>
 </body>
