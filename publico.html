@@ -180,12 +180,21 @@ async function loadData(){
 try{
 const api="https://script.google.com/macros/s/AKfycbzr1jN49NDftm0momNM2qxnPM35BUAGf3U9Yviua2E-hyxkbSdb9yVexQeFmk_owzwv/exec?accion=obtenerLogisticaPapa";
 const r=await fetch(api,{cache:"no-store",redirect:"follow"});
-if(r.ok){const d=await r.json();if(d&&d.ok&&Array.isArray(d.datos)){readData(d.datos);return;}}
-}catch(e){console.warn("No se pudo consultar la hoja del SGT",e);}
-try{
-const response=await fetch("operativo-florida-public.json",{cache:"no-store"});
-if(response.ok)readData(await response.json());
-}catch(e){console.warn("No se pudo cargar la información pública",e);}
+if(r.ok){
+  const d=await r.json();
+  if(d&&d.ok){
+    let datos=d.datos;
+    if(typeof datos==="string"){
+      try{datos=JSON.parse(datos);}catch(_){datos=[];}
+    }
+    if(Array.isArray(datos)){
+      readData(datos);
+      return;
+    }
+  }
+}
+}catch(e){console.warn("No se pudo consultar Google Sheets",e);}
+console.warn("El mapa público no mostrará una copia local: Google Sheets es la única fuente de datos.");
 }
 document.getElementById("showAll").onclick=()=>{
 Object.keys(C).forEach(t=>{if(layers.some(l=>l.type===t))addType(t);});
