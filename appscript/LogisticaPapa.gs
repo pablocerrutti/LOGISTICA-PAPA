@@ -46,8 +46,30 @@ function aplicarInformacionesLogisticaPapa(){
   rows.forEach(function(r){
     const id=String(r[0]||'').trim();
     const tipo=String(r[2]||'').trim();
-    const clave=info[id]?id:(info[tipo]?tipo:'');
-    if(clave){r[7]=info[clave];actualizadas++;}
+    const nombre=String(r[1]||'').trim().toLowerCase();
+
+    /*
+     * Hay dos capas con tipo zone_estacionamiento:
+     * una general y otra exclusiva para automóviles.
+     * La descripción se determina por el nombre cuando corresponde,
+     * sin cambiar los IDs ni la geometría almacenada.
+     */
+    let clave=info[id]?id:(info[tipo]?tipo:'');
+
+    if(
+      tipo==='zone_estacionamiento' &&
+      (
+        nombre.includes('exclusivo para automóviles') ||
+        nombre.includes('exclusivo para automoviles')
+      )
+    ){
+      clave='zone_estacionamiento_automoviles';
+    }
+
+    if(clave){
+      r[7]=info[clave];
+      actualizadas++;
+    }
   });
   sh.getRange(2,1,last-1,8).setValues(rows);
   return {ok:true,cantidad:actualizadas,mensaje:'Información descriptiva aplicada a las capas existentes.',hoja:LOGISTICA_PAPA_SHEET};
