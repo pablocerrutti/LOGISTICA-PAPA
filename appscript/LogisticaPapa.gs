@@ -37,7 +37,8 @@ function normalizePaths_(obj){
   if(!paths.length&&obj&&Array.isArray(obj.points)) paths=[obj.points];
   if(!paths.length&&obj){
     const parsed=parseGeometry_(obj.points);
-    if(parsed.length&&Array.isArray(parsed[0])&&Array.isArray(parsed[0][0])) paths=parsed;
+    if(parsed&&parsed.paths) paths=Array.isArray(parsed.paths)?parsed.paths:[];
+    else if(parsed.length&&Array.isArray(parsed[0])&&Array.isArray(parsed[0][0])) paths=parsed;
     else if(parsed.length) paths=[parsed];
   }
   return paths.filter(function(p){
@@ -102,7 +103,7 @@ function guardarLogisticaPapa(e){
       String(l.id),
       String(l.name||''),
       String(l.type||''),
-      JSON.stringify(paths[0]),
+      JSON.stringify({paths:paths}),
       l.visible===false?'NO':'SI',
       new Date(),
       String(p.usuario||'LOGISTICA-PAPA').trim()
