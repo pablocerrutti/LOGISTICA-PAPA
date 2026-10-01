@@ -137,7 +137,8 @@ function obtenerLogisticaPapa(e){
     const name=String(r[1]||'').trim();
     const type=String(r[2]||'').trim();
     const paths=normalizePaths_({points:r[3]});
-    const visible=String(r[4]===undefined?'SI':r[4]).toUpperCase()!=='NO';\n    const informacion=String(r[7]||'').trim();
+    const visible=String(r[4]===undefined?'SI':r[4]).toUpperCase()!=='NO';
+    const informacion=String(r[7]||'').trim();
 
     if(!id||!type||!paths.length)return;
 
