@@ -5,6 +5,6 @@
 const CONFIG={
   NOMBRE_SISTEMA:'LOGISTICA-PAPA',
   VERSION:'1.0',
-  // Pegá aquí el ID de la NUEVA Google Sheet del proyecto.
-  SHEET_ID:'PEGAR_AQUI_ID_DE_LA_NUEVA_SHEET'
+  // Google Sheet utilizada para guardar rutas, zonas y posiciones.
+  SHEET_ID:'10vSqMoBq6y7VivG1exi64JFG3lhna_iw2mnhPiLRrnY'
 };
