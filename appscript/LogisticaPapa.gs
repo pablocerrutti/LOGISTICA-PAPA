@@ -97,7 +97,7 @@ function obtenerLogisticaPapa(e){
     };
   }
 
-  const rows=sh.getRange(2,1,last-1,7).getValues();
+  const rows=sh.getRange(2,1,last-1,8).getValues();
   const datos=[];
 
   rows.forEach(function(r,i){
@@ -105,7 +105,7 @@ function obtenerLogisticaPapa(e){
     const name=String(r[1]||'').trim();
     const type=String(r[2]||'').trim();
     const paths=normalizePaths_({points:r[3]});
-    const visible=String(r[4]===undefined?'SI':r[4]).toUpperCase()!=='NO';
+    const visible=String(r[4]===undefined?'SI':r[4]).toUpperCase()!=='NO';\n    const informacion=String(r[7]||'').trim();
 
     if(!id||!type||!paths.length)return;
 
@@ -188,10 +188,10 @@ function guardarLogisticaPapa(e){
 
   const last=sh.getLastRow();
   if(last>1){
-    sh.getRange(2,1,last-1,7).clearContent();
+    sh.getRange(2,1,last-1,8).clearContent();
   }
 
-  sh.getRange(2,1,normalizados.length,7).setValues(normalizados);
+  sh.getRange(2,1,normalizados.length,8).setValues(normalizados);
   sh.getRange(2,6,normalizados.length,1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
 
   return {
