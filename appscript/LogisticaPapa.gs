@@ -13,12 +13,44 @@ function hojaLogisticaPapa_(){
   let sh=ss.getSheetByName(LOGISTICA_PAPA_SHEET);
   if(!sh){
     sh=ss.insertSheet(LOGISTICA_PAPA_SHEET);
-    sh.getRange(1,1,1,7).setValues([[
-      'ID','Nombre','Tipo','Puntos','Visible','FechaActualizacion','Usuario'
+    sh.getRange(1,1,1,8).setValues([[
+      'ID','Nombre','Tipo','Puntos','Visible','FechaActualizacion','Usuario','Informacion'
     ]]);
     sh.setFrozenRows(1);
   }
+  if(sh.getLastColumn()<8)sh.getRange(1,8).setValue('Informacion');
   return sh;
+}
+
+function aplicarInformacionesLogisticaPapa(){
+  const sh=hojaLogisticaPapa_();
+  const info={
+    'route_excursiones':'Circuito operativo destinado al ingreso y egreso ordenado de ómnibus y micros de excursiones, evitando interferencias con las demás rutas de circulación y manteniendo despejadas las áreas de seguridad.',
+    'zone_excursiones':'Área destinada exclusivamente al estacionamiento de ómnibus y micros de excursiones durante el operativo. No corresponde al estacionamiento de automóviles ni de otros vehículos.',
+    'route_interdepartamental':'Circuito operativo destinado al ingreso y egreso de ómnibus de empresas interdepartamentales de línea, permitiendo organizar la circulación y el acceso al área terminal temporal.',
+    'route_pontifice':'Ruta operativa reservada para el ingreso y salida del Sumo Pontífice. Su finalidad es mantener un recorrido controlado, seguro y libre de obstáculos durante los movimientos previstos.',
+    'route_intendente':'Ruta Alternativa destinada al ingreso y salida del Intendente departamental, prevista como circuito diferenciado para facilitar la movilidad y evitar cruces innecesarios con otros flujos del operativo.',
+    'zone_exclusion':'Zona de exclusión destinada únicamente a circulación y permanencia peatonal. No se permite el ingreso, estacionamiento ni detención de vehículos dentro del área delimitada.',
+    'zone_descenso':'Área destinada exclusivamente al descenso de pasajeros. Los vehículos deben realizar únicamente la detención necesaria para el descenso y continuar luego por el circuito correspondiente.',
+    'zone_estacionamiento':'Zona de estacionamiento permitido destinada exclusivamente a automóviles, de acuerdo con la organización del operativo. No corresponde al estacionamiento de ómnibus, micros u otros vehículos no autorizados.',
+    'zone_discapacidad':'Estacionamiento exclusivo para vehículos de personas con discapacidad debidamente identificados. El espacio debe mantenerse libre para garantizar el acceso y la movilidad de quienes lo necesitan.',
+    'zone_prensa_nacional':'Zona exclusiva para Prensa Nacional y Local. Área destinada al estacionamiento y operación de los vehículos acreditados para la cobertura periodística del evento.',
+    'zone_prensa_vaticano':'Zona exclusiva para Prensa del Vaticano. Área destinada a los vehículos y equipos de prensa acreditados para la cobertura oficial del evento.',
+    'zone_terminal_temporal':'Terminal temporal destinada a la operación de ómnibus de línea interdepartamental durante el operativo. Su organización permite concentrar ascensos, descensos y maniobras en un sector controlado.',
+    'zone_estacionamiento_automoviles':'Estacionamiento permitido exclusivo para automóviles. No se permite el uso del área por ómnibus, micros, camiones u otros vehículos distintos de automóviles.'
+  };
+  const last=sh.getLastRow();
+  if(last<2)return {ok:true,cantidad:0,mensaje:'No hay capas para actualizar.'};
+  const rows=sh.getRange(2,1,last-1,8).getValues();
+  let actualizadas=0;
+  rows.forEach(function(r){
+    const id=String(r[0]||'').trim();
+    const tipo=String(r[2]||'').trim();
+    const clave=info[id]?id:(info[tipo]?tipo:'');
+    if(clave){r[7]=info[clave];actualizadas++;}
+  });
+  sh.getRange(2,1,last-1,8).setValues(rows);
+  return {ok:true,cantidad:actualizadas,mensaje:'Información descriptiva aplicada a las capas existentes.',hoja:LOGISTICA_PAPA_SHEET};
 }
 
 /*
@@ -115,7 +147,8 @@ function obtenerLogisticaPapa(e){
       type:type,
       points:paths[0],
       paths:paths,
-      visible:visible
+      visible:visible,
+      informacion:informacion
     });
   });
 
@@ -168,7 +201,8 @@ function guardarLogisticaPapa(e){
       JSON.stringify({paths:paths}),
       l.visible===false?'NO':'SI',
       new Date(),
-      String(p.usuario||'LOGISTICA-PAPA').trim()
+      String(p.usuario||'LOGISTICA-PAPA').trim(),
+      String(l.informacion||'').trim()
     ]);
   });
 
@@ -218,7 +252,7 @@ function diagnosticoLogisticaPapa(){
 
   if(last<2)return resultado;
 
-  const rows=sh.getRange(2,1,last-1,7).getValues();
+  const rows=sh.getRange(2,1,last-1,8).getValues();
 
   rows.forEach(function(r,i){
     const paths=normalizePaths_({points:r[3]});
