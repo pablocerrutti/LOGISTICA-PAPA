@@ -10,6 +10,7 @@ function doGet(e){
       case 'obtenerLogisticaPapa': return json(obtenerLogisticaPapa(e));
       case 'guardarLogisticaPapa': return json(guardarLogisticaPapa(e));
       case 'ping': return json({ok:true,mensaje:'API LOGISTICA-PAPA funcionando correctamente.',fecha:new Date().toISOString()});
+      case 'diagnosticoLogisticaPapa': return json(diagnosticoLogisticaPapa());
       default: return json({ok:false,mensaje:'Acción inválida: '+accion});
     }
   }catch(error){
