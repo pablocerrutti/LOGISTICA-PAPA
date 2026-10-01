@@ -182,7 +182,7 @@ layers.push({...r,type:ct});
 }
 async function loadData(){
 try{
-const api="https://script.google.com/macros/s/AKfycbzYU8xREGRuJ3-8ZrK-dbYUZNzVBhPiIceVWU3OftmxvO6fNCBFcFwrnurmWofjkFxR/exec?accion=obtenerLogisticaPapa";
+const api="https://script.google.com/macros/s/AKfycbzr1jN49NDftm0momNM2qxnPM35BUAGf3U9Yviua2E-hyxkbSdb9yVexQeFmk_owzwv/exec?accion=obtenerLogisticaPapa";
 const r=await fetch(api,{cache:"no-store",redirect:"follow"});
 if(r.ok){const d=await r.json();if(d&&d.ok&&Array.isArray(d.datos)){readData(d.datos);return;}}
 }catch(e){console.warn("No se pudo consultar la hoja del SGT",e);}
