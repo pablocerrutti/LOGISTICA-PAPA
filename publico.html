@@ -178,7 +178,7 @@ if(!ct)return;const paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.poin
 }
 async function loadData(){
 try{
-const api="https://script.google.com/macros/s/AKfycbzr1jN49NDftm0momNM2qxnPM35BUAGf3U9Yviua2E-hyxkbSdb9yVexQeFmk_owzwv/exec?accion=obtenerLogisticaPapa";
+const api="https://script.google.com/macros/s/AKfycbwuH_br7N-DhY6DIqn8v9IfWrXQ4uvswqQh4WKKQd9RnGn2sM5gkeV8HF1_h2KU9njo/exec?accion=obtenerLogisticaPapa";
 const r=await fetch(api,{cache:"no-store",redirect:"follow"});
 if(r.ok){
   const d=await r.json();
