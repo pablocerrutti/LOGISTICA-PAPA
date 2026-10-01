@@ -32,7 +32,11 @@ async function save(){
    const received=saved.map(l=>String(l.id)).sort().join("|");
    if(expected!==received)throw new Error("Google Sheets confirmó una lista de rutas/zonas diferente a la enviada.");
    return true;
-  }catch(e){console.error("Guardado Logistica Papa",e);return false}
+  }catch(e){
+   console.error("Guardado Logistica Papa",e);
+   try{alert("NO SE PUDO GUARDAR EN GOOGLE SHEETS.\\n\\n"+(e&&e.message?e.message:"Error desconocido")+"\\n\\nLa capa quedó en pantalla, pero NO se considerará guardada hasta que Google Sheets confirme el guardado.");}catch(_){}
+   return false
+  }
  });
  return saveQueue;
 }
