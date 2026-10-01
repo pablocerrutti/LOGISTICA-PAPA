@@ -28,6 +28,9 @@ async function save(){
    let saved=vd&&vd.datos;
    if(typeof saved==="string"){try{saved=JSON.parse(saved)}catch(_){saved=[]}}
    if(!Array.isArray(saved)||saved.length!==clean.length)throw new Error("Google Sheets no confirmó todas las rutas y zonas guardadas.");
+   const expected=clean.map(l=>String(l.id)).sort().join("|");
+   const received=saved.map(l=>String(l.id)).sort().join("|");
+   if(expected!==received)throw new Error("Google Sheets confirmó una lista de rutas/zonas diferente a la enviada.");
    return true;
   }catch(e){console.error("Guardado Logistica Papa",e);return false}
  });
