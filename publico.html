@@ -99,7 +99,7 @@ header{padding:9px 12px}
 <div><i style="background:#000"></i>Zona de exclusión / peatonal</div>
 <div><i style="background:#16a34a"></i>Estacionamiento permitido</div>
 <div><i style="background:#ffd400"></i>Estacionamiento ómnibus / micros</div>
-<div><i style="background:#22cfe5"></i>Descenso únicamente</div>
+<div><i style="background:#22cfe5"></i>Descenso únicamente</div><div><i style="background:#6f2da8"></i>Prensa del Vaticano</div><div><i style="background:#d63384"></i>Prensa Nacional/Local</div><div><i style="background:#8b5a2b"></i>Estacionamiento discapacidad</div>
 </div>
 </main>
 </div>
@@ -115,7 +115,7 @@ route_interdepartamental:{name:"Ruta de ingreso y egreso de ómnibus de empresas
 zone_exclusion:{name:"Zona de exclusión · solo peatonal",color:"#000",kind:"zone"},
 zone_estacionamiento:{name:"Zona de estacionamiento permitido",color:"#16a34a",kind:"zone"},
 zone_excursiones:{name:"Zona de estacionamiento ómnibus / micros de excursiones",color:"#ffd400",kind:"zone"},
-zone_descenso:{name:"Zona de descenso de pasajeros únicamente",color:"#22cfe5",kind:"zone"}
+zone_descenso:{name:"Zona de descenso de pasajeros únicamente",color:"#22cfe5",kind:"zone"},zone_prensa_vaticano:{name:"Zona exclusiva para Prensa del Vaticano",color:"#6f2da8",kind:"zone"},zone_prensa_nacional:{name:"Zona exclusiva para Prensa Nacional/Local",color:"#d63384",kind:"zone"},zone_discapacidad:{name:"Estacionamiento exclusivo para vehículos de personas con discapacidad",color:"#8b5a2b",kind:"zone"}
 };
 const map=L.map("map",{preferCanvas:true}).setView([-34.0958,-56.2142],14);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"© OpenStreetMap"}).addTo(map);
@@ -132,6 +132,9 @@ if(n.includes("exclus"))return "zone_exclusion";
 if(n.includes("estacionamiento")&&n.includes("ómnibus"))return "zone_excursiones";
 if(n.includes("estacionamiento"))return "zone_estacionamiento";
 if(n.includes("descenso"))return "zone_descenso";
+if(n.includes("prensa")&&n.includes("vaticano"))return "zone_prensa_vaticano";
+if(n.includes("prensa")&&(n.includes("nacional")||n.includes("local")))return "zone_prensa_nacional";
+if(n.includes("discapacidad")||n.includes("discapacitados"))return "zone_discapacidad";
 return null;
 }
 function shape(l){
