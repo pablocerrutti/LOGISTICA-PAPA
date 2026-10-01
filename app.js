@@ -20,9 +20,14 @@ async function save(){
  ++saveSeq;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
   try{
-   const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({accion:"guardarLogisticaPapa",datos:JSON.stringify(clean),usuario:"LOGISTICA-PAPA"}),cache:"no-store"});
+   const r=await fetch(API_URL+"?t="+Date.now(),{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({accion:"guardarLogisticaPapa",datos:JSON.stringify(clean),usuario:"LOGISTICA-PAPA"}),cache:"no-store"});
    const t=await r.text();let x=null;try{x=JSON.parse(t)}catch(_){}
    if(!r.ok||!x||!x.ok)throw new Error((x&&x.mensaje)||"No se pudo guardar en Google Sheets");
+   const vr=await fetch(API_URL+"?accion=obtenerLogisticaPapa&t="+Date.now(),{cache:"no-store"});
+   const vd=await vr.json();
+   let saved=vd&&vd.datos;
+   if(typeof saved==="string"){try{saved=JSON.parse(saved)}catch(_){saved=[]}}
+   if(!Array.isArray(saved)||saved.length!==clean.length)throw new Error("Google Sheets no confirmó todas las rutas y zonas guardadas.");
    return true;
   }catch(e){console.error("Guardado Logistica Papa",e);return false}
  });
@@ -30,7 +35,7 @@ async function save(){
 }
 async function loadCloud(addToMap=design){
  try{
-  const r=await fetch(API_URL+"?accion=obtenerLogisticaPapa",{cache:"no-store",redirect:"follow"});
+  const r=await fetch(API_URL+"?accion=obtenerLogisticaPapa&t="+Date.now(),{cache:"no-store",redirect:"follow"});
   if(r.ok){
    const d=await r.json();
    if(d&&d.ok){
