@@ -115,7 +115,7 @@ route_interdepartamental:{name:"Ruta de ingreso y egreso de ómnibus de empresas
 zone_exclusion:{name:"Zona de exclusión · solo peatonal",color:"#000",kind:"zone"},
 zone_estacionamiento:{name:"Estacionamiento permitido · EXCLUSIVO PARA AUTOMÓVILES · NO OTROS VEHÍCULOS",color:"#16a34a",kind:"zone"},
 zone_excursiones:{name:"Estacionamiento · EXCLUSIVO PARA ÓMNIBUS Y MICROS DE EXCURSIONES · NO AUTOMÓVILES U OTROS VEHÍCULOS",color:"#ffd400",kind:"zone"},
-zone_descenso:{name:"Zona de descenso de pasajeros únicamente",color:"#22cfe5",kind:"zone"},zone_prensa_vaticano:{name:"Zona exclusiva para Prensa del Vaticano",color:"#6f2da8",kind:"zone"},zone_prensa_nacional:{name:"Zona exclusiva para Prensa Nacional/Local",color:"#d63384",kind:"zone"},zone_discapacidad:{name:"Estacionamiento exclusivo para vehículos de personas con discapacidad",color:"#8b5a2b",kind:"zone"}
+zone_descenso:{name:"Zona de descenso de pasajeros únicamente",color:"#22cfe5",kind:"zone"},zone_prensa_vaticano:{name:"Zona exclusiva para Prensa del Vaticano",color:"#6f2da8",kind:"zone"},zone_prensa_nacional:{name:"Zona exclusiva para Prensa Nacional/Local",color:"#d63384",kind:"zone"},zone_discapacidad:{name:"Estacionamiento exclusivo para vehículos de personas con discapacidad",color:"#8b5a2b",kind:"zone"},zone_terminal_temporal:{name:"TERMINAL DE ÓMNIBUS DE LÍNEA INTERDEPARTAMENTAL (TEMPORAL)",color:"#7c3aed",kind:"zone"}
 };
 const map=L.map("map",{preferCanvas:true}).setView([-34.0958,-56.2142],14);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"© OpenStreetMap"}).addTo(map);
@@ -134,20 +134,11 @@ if(n.includes("estacionamiento"))return "zone_estacionamiento";
 if(n.includes("descenso"))return "zone_descenso";
 if(n.includes("prensa")&&n.includes("vaticano"))return "zone_prensa_vaticano";
 if(n.includes("prensa")&&(n.includes("nacional")||n.includes("local")))return "zone_prensa_nacional";
-if(n.includes("discapacidad")||n.includes("discapacitados"))return "zone_discapacidad";
+if(n.includes("discapacidad")||n.includes("discapacitados"))return "zone_discapacidad";if(n.includes("terminal")&&n.includes("interdepart"))return "zone_terminal_temporal";
 return null;
 }
-function shape(l){
-const c=C[l.type],a=l.points.map(p=>[p.lat,p.lng]);
-if(c.kind==="route"){
-return L.polyline(a,{color:c.color,weight:c.weight,opacity:.88,lineCap:"round",lineJoin:"round"});
-}
-return L.polygon(a,{color:c.color,weight:3,opacity:.95,fillColor:c.color,fillOpacity:.35});
-}
-function popup(l){
-const c=C[l.type];
-return '<strong>'+escapeHtml(l.name||c.name)+'</strong><br><span style="color:#667784">'+(c.kind==="route"?"Ruta operativa":"Zona operativa")+'</span><br><br>'+escapeHtml(c.name);
-}
+function popup(l){const c=C[l.type];const kind=c.kind==="route"?"Ruta operativa":"Zona operativa";const detail=c.kind==="route"?"Esta ruta corresponde al circuito operativo definido para el ingreso y/o egreso indicado.":"Área operativa delimitada en el mapa para la función indicada.";return '<div style="min-width:230px"><div style="font-size:14px;font-weight:850;margin-bottom:6px">'+escapeHtml(l.name||c.name)+'</div><div style="display:inline-block;padding:3px 7px;border-radius:999px;background:'+c.color+';color:#fff;font-size:10px;font-weight:800;margin-bottom:8px">'+kind+'</div><div style="font-size:12px;line-height:1.45;color:#43535e"><strong>Información:</strong><br>'+escapeHtml(detail)+'</div></div>'}
+function shape(l){const c=C[l.type];const paths=Array.isArray(l.paths)&&l.paths.length?l.paths:[l.points];const g=L.featureGroup();paths.filter(p=>Array.isArray(p)&&p.length>=2).forEach(path=>{const a=path.map(p=>[p.lat,p.lng]);const s=c.kind==="route"?L.polyline(a,{color:c.color,weight:c.weight,opacity:.88,lineCap:"round",lineJoin:"round"}):L.polygon(a,{color:c.color,weight:3,opacity:.95,fillColor:c.color,fillOpacity:.35});s.bindPopup(popup(l));s.addTo(g)});return g}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
 function addType(t){
 if(groups[t])map.removeLayer(groups[t]);
@@ -179,8 +170,7 @@ const a=Array.isArray(data)?data:data?.layers;
 if(!Array.isArray(a))return;
 a.forEach(r=>{
 const ct=canonicalType(r);
-if(!ct||!Array.isArray(r.points)||r.points.length<2)return;
-layers.push({...r,type:ct});
+if(!ct)return;const paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!paths.some(p=>Array.isArray(p)&&p.length>=2))return;layers.push({...r,type:ct,paths:paths,points:paths[0]});
 });
 }
 async function loadData(){
