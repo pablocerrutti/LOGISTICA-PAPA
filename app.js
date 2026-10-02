@@ -23,14 +23,20 @@ async function save(){
  ++saveSeq;
  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
   try{
+   const payload=new URLSearchParams({
+    accion:"guardarLogisticaPapa",
+    datos:JSON.stringify(clean),
+    usuario:"LOGISTICA-PAPA"
+   });
+
+   /*
+    * Apps Script /exec puede responder mediante una redirección.
+    * Se evita forzar manualmente Content-Type y se utiliza un POST
+    * simple para que el navegador pueda seguir esa redirección.
+    */
    const r=await fetch(API_URL+"?t="+Date.now(),{
     method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
-    body:new URLSearchParams({
-     accion:"guardarLogisticaPapa",
-     datos:JSON.stringify(clean),
-     usuario:"LOGISTICA-PAPA"
-    }),
+    body:payload,
     cache:"no-store",
     redirect:"follow"
    });
@@ -41,18 +47,13 @@ async function save(){
 
    if(!r.ok||!x||!x.ok){
     const detalle=x&&x.mensaje
-      ? x.mensaje
-      : (postText&&postText.trim().startsWith("<")
-        ? "Google Apps Script devolvió una página HTML en lugar de una respuesta JSON al guardar."
-        : "No se pudo guardar en Google Sheets.");
+      ?x.mensaje
+      :(postText&&postText.trim().startsWith("<")
+        ?"Google Apps Script devolvió HTML al guardar. Compruebe que la implementación web esté publicada como 'Cualquiera'."
+        :"No se pudo guardar en Google Sheets.");
     throw new Error(detalle);
    }
 
-   /*
-    * Confirmación independiente desde Google Sheets.
-    * Se lee primero como texto para evitar el error
-    * "Unexpected token '<'" cuando un proxy/redirección devuelve HTML.
-    */
    const vr=await fetch(
     API_URL+"?accion=obtenerLogisticaPapa&t="+Date.now(),
     {cache:"no-store",redirect:"follow"}
@@ -62,8 +63,8 @@ async function save(){
    let vd=null;
    try{vd=JSON.parse(verifyText)}catch(_){
     const preview=verifyText
-      ? verifyText.replace(/\\s+/g," ").trim().slice(0,180)
-      : "(respuesta vacía)";
+      ?verifyText.replace(/\\s+/g," ").trim().slice(0,180)
+      :"(respuesta vacía)";
     throw new Error(
       "Google Sheets guardó la información, pero la respuesta de confirmación no fue JSON. "+
       "Respuesta recibida: "+preview
@@ -72,8 +73,7 @@ async function save(){
 
    if(!vr.ok||!vd||vd.ok!==true){
     throw new Error(
-      (vd&&vd.mensaje)||
-      "Google Sheets no confirmó correctamente el guardado."
+      (vd&&vd.mensaje)||"Google Sheets no confirmó correctamente el guardado."
     );
    }
 
@@ -93,9 +93,7 @@ async function save(){
    const received=saved.map(l=>String(l.id)).sort().join("|");
 
    if(expected!==received){
-    throw new Error(
-     "Google Sheets confirmó una lista de rutas/zonas diferente a la enviada."
-    );
+    throw new Error("Google Sheets confirmó una lista de rutas/zonas diferente a la enviada.");
    }
 
    return true;
