@@ -62,6 +62,9 @@ function aplicarInformacionesLogisticaPapa(){
 
     if(clave){
       r[7]=info[clave];
+      if(tipo==='route_pontifice'){
+        r[1]='Recorrido del Sumo Pontifice en Papamovil';
+      }
       actualizadas++;
     }
   });
