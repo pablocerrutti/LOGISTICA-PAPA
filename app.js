@@ -178,7 +178,11 @@ async function loadCloud(addToMap=design){
 function fit(l){const ps=(l?.paths&&l.paths.length?l.paths:[l?.points||[]]).flat();if(ps.length)map.fitBounds(L.latLngBounds(ps.map(p=>[p.lat,p.lng])).pad(.2),{maxZoom:17})}
 function editVertexIcon(active=false){return L.divIcon({className:"editVertex"+(active?" selected":""),html:"<span></span>",iconSize:[20,20],iconAnchor:[10,10]})}
 function hideVertexMenu(){const x=$("vertexContextMenu");if(x)x.style.display="none"}
-function ensureVertexMenu(){let x=$("vertexContextMenu");if(x)return x;x=document.createElement("div");x.id="vertexContextMenu";x.innerHTML='<button type="button" id="moveContextVertex">↔ Mover este punto</button><button type="button" id="deleteContextVertex">🗑 Eliminar este punto</button>';Object.assign(x.style,{display:"none",position:"fixed",zIndex:"10000",background:"#fff",border:"1px solid #d9e1e7",borderRadius:"8px",boxShadow:"0 8px 24px #0003",padding:"4px",minWidth:"170px"});document.body.appendChild(x);x.querySelectorAll("button").forEach(b=>b.style.cssText="display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer");x.querySelector("#moveContextVertex").style.color="#173f67";x.querySelector("#deleteContextVertex").style.color="#b42318";x.querySelector("#moveContextVertex").onclick=()=>{hideVertexMenu();activateMoveSelectedVertex()};x.querySelector("#deleteContextVertex").onclick=()=>{hideVertexMenu();deleteSelectedVertex()};return x}
+function ensureVertexMenu(){let x=$("vertexContextMenu");if(x)return x;x=document.createElement("div");x.id="vertexContextMenu";x.innerHTML='<button type="button" id="moveContextVertex">↔ Mover este punto</button><button type="button" id="deleteContextVertex">🗑 Eliminar este punto</button>';Object.assign(x.style,{display:"none",position:"fixed",zIndex:"10000",background:"#fff",border:"1px solid #d9e1e7",borderRadius:"8px",boxShadow:"0 8px 24px #0003",padding:"4px",minWidth:"170px"});document.body.appendChild(x);x.querySelectorAll("button").forEach(b=>b.style.cssText="display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer");x.querySelector("#moveContextVertex").style.color="#173f67";x.querySelector("#deleteContextVertex").style.color="#b42318";x.querySelector("#moveContextVertex").onclick=()=>{hideVertexMenu();activateMoveSelectedVertex()};x.querySelector("#deleteContextVertex").onclick=()=>{
+ const v=window.editingVertex?{...window.editingVertex}:null;
+ hideVertexMenu();
+ deleteSelectedVertex(v);
+};return x}
 function clearEditMarkers(){hideVertexMenu();editMarkers.forEach(m=>map.removeLayer(m));editMarkers=[];editing=null;window.editingVertex=null;const b=$("deletePoint");if(b)b.disabled=true;const s=$("saveEdit");if(s)s.disabled=true}
 function refreshEditMarkers(l){
  clearEditMarkers();
@@ -186,41 +190,74 @@ function refreshEditMarkers(l){
  const paths=l.paths&&l.paths.length?l.paths:[l.points];
  paths.forEach((path,pathIndex)=>{
   path.forEach((p,pointIndex)=>{
-   const m=L.marker([p.lat,p.lng],{draggable:true,zIndexOffset:2000,icon:editVertexIcon(false)}).addTo(map);
+   const m=L.marker([p.lat,p.lng],{draggable:true,zIndexOffset:5000,icon:editVertexIcon(false)}).addTo(map);
    m.__pathIndex=pathIndex;
    m.__pointIndex=pointIndex;
-   m.on("click",()=>{
+
+   // Selección FORZADA del vértice: cualquier pulsación sobre el punto
+   // lo convierte inmediatamente en el punto activo para eliminar/mover.
+   const activateVertex=()=>{
+    if(!editing||editing!==l)return;
     hideVertexMenu();
-    window.editingVertex={layer:l,pathIndex,pointIndex,marker:m};
+    window.editingVertex={layer:l,pathIndex:m.__pathIndex,pointIndex:m.__pointIndex,marker:m};
     editMarkers.forEach(x=>x.setIcon(editVertexIcon(x===m)));
-    const b=$("deletePoint");if(b)b.disabled=false;
-   });
-   m.on("dragstart",()=>{
-    hideVertexMenu();
-    window.editingVertex={layer:l,pathIndex,pointIndex,marker:m};
-    editMarkers.forEach(x=>x.setIcon(editVertexIcon(x===m)));
-    const b=$("deletePoint");if(b)b.disabled=false;
-   });
+    const b=$("deletePoint");
+    if(b)b.disabled=false;
+   };
+
+   m.on("click",activateVertex);
+   m.on("mousedown",activateVertex);
+   m.on("touchstart",activateVertex);
+   m.on("dragstart",activateVertex);
+
    m.on("drag",()=>{
-    p.lat=m.getLatLng().lat;
-    p.lng=m.getLatLng().lng;
-    l.points=paths[0];
+    const ll=m.getLatLng();
+    const currentPath=(l.paths&&l.paths.length?l.paths:[l.points])[m.__pathIndex];
+    if(!currentPath||!currentPath[m.__pointIndex])return;
+    currentPath[m.__pointIndex].lat=ll.lat;
+    currentPath[m.__pointIndex].lng=ll.lng;
+    l.points=(l.paths&&l.paths.length?l.paths:[l.points])[0];
     if(l.shape)map.removeLayer(l.shape);
     l.shape=make(l,.98);
     if(l.visible)l.shape.addTo(map);
    });
    m.on("dragend",()=>{dirty=true;});
+
+   // Menú contextual nativo de Leaflet: siempre selecciona el vértice
+   // antes de mostrar las acciones.
    m.on("contextmenu",e=>{
     if(!editing||editing!==l)return;
-    L.DomEvent.stop(e);
-    window.editingVertex={layer:l,pathIndex,pointIndex,marker:m};
-    editMarkers.forEach(x=>x.setIcon(editVertexIcon(x===m)));
-    const b=$("deletePoint");if(b)b.disabled=false;
+    L.DomEvent.stopPropagation(e);
+    L.DomEvent.preventDefault(e);
+    activateVertex();
     const menu=ensureVertexMenu();
     const oe=e.originalEvent;
-    const x=Math.min(oe.clientX,window.innerWidth-190),y=Math.min(oe.clientY,window.innerHeight-55);
-    menu.style.left=Math.max(6,x)+"px";menu.style.top=Math.max(6,y)+"px";menu.style.display="block";
+    const x=Math.min(oe.clientX,window.innerWidth-195);
+    const y=Math.min(oe.clientY,window.innerHeight-70);
+    menu.style.left=Math.max(6,x)+"px";
+    menu.style.top=Math.max(6,y)+"px";
+    menu.style.display="block";
    });
+
+   // Refuerzo para navegadores donde Leaflet no entrega contextmenu de forma fiable.
+   m.on("add",()=>{
+    const el=m.getElement();
+    if(!el||el.__vertexContextBound)return;
+    el.__vertexContextBound=true;
+    el.addEventListener("contextmenu",ev=>{
+      if(!editing||editing!==l)return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      activateVertex();
+      const menu=ensureVertexMenu();
+      const x=Math.min(ev.clientX,window.innerWidth-195);
+      const y=Math.min(ev.clientY,window.innerHeight-70);
+      menu.style.left=Math.max(6,x)+"px";
+      menu.style.top=Math.max(6,y)+"px";
+      menu.style.display="block";
+    },{passive:false});
+   });
+
    editMarkers.push(m);
   });
  });
@@ -235,30 +272,50 @@ function selectVertex(l,pathIndex,pointIndex){
  editMarkers.forEach(x=>x.setIcon(editVertexIcon(x===marker)));
  const b=$("deletePoint");if(b)b.disabled=false;
 }
-function deleteSelectedVertex(){
+function deleteSelectedVertex(vertexOverride=null){
  hideVertexMenu();
- const v=window.editingVertex;
- if(!v||!editing||v.layer!==editing)return;
+ const v=vertexOverride||window.editingVertex;
+
+ if(!editing){
+  alert("Primero entrá en edición de la capa y seleccioná un punto.");
+  return false;
+ }
+ if(!v||v.layer!==editing){
+  alert("Seleccioná un punto del dibujo antes de eliminarlo.");
+  return false;
+ }
+
  const paths=editing.paths&&editing.paths.length?editing.paths:[editing.points];
  const path=paths[v.pathIndex];
- if(!Array.isArray(path))return;
+ const index=Number(v.pointIndex);
+
+ if(!Array.isArray(path)||!Number.isInteger(index)||index<0||index>=path.length){
+  alert("No se pudo identificar el punto seleccionado. Seleccionalo nuevamente.");
+  return false;
+ }
+
  const min=route(editing.type)?2:3;
  if(path.length<=min){
   alert(route(editing.type)
    ?"Una ruta debe conservar al menos 2 puntos."
    :"Una zona debe conservar al menos 3 puntos.");
-  return;
+  return false;
  }
- path.splice(v.pointIndex,1);
- dirty=true;
+
+ // Eliminación directa e irreversible del vértice en memoria.
+ path.splice(index,1);
  editing.paths=paths;
  editing.points=paths[0];
+ dirty=true;
+
  if(editing.shape)map.removeLayer(editing.shape);
  editing.shape=make(editing,.98);
  if(editing.visible)editing.shape.addTo(map);
+
  window.editingVertex=null;
  refreshEditMarkers(editing);
  render();
+ return true;
 }
 async function finishEdit(l){
  if(editing!==l)return true;
@@ -301,6 +358,14 @@ async function editLayer(l){
  const show=$("showAllDesign"),hide=$("hideAllDesign");
  if(show)show.onclick=()=>{layers.forEach(l=>{l.visible=true;if(l.shape)l.shape.addTo(map)});dirty=true;save().then(ok=>{if(!ok)console.warn("No se pudo guardar la visibilidad de todas las capas.");render()})};
  if(hide)hide.onclick=()=>{if(editing)clearEditMarkers();layers.forEach(l=>{l.visible=false;if(l.shape)map.removeLayer(l.shape)});dirty=true;save().then(ok=>{if(!ok)console.warn("No se pudo guardar la visibilidad de todas las capas.");render()})};
-}function load(addToMap=design){try{const a=[];a.forEach(r=>{const ct=canonicalType(r),paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!ct||!paths.some(p=>Array.isArray(p)&&p.length>=2))return;const l={...r,type:ct,name:ct==="route_intendente"?"Ruta Alternativa":(String(r.name||"").trim()||C[ct].name),informacion:String(r.informacion||r.info||"").trim(),paths:paths,points:paths[0],visible:r.visible!==false};if(design){l.shape=make(l);if(addToMap&&l.visible)l.shape.addTo(map)}layers.push(l)})}catch(e){console.warn("No se pudieron cargar las capas",e)}}function clearOperationalLayers(){map.eachLayer(layer=>{if(layer!==baseLayer)map.removeLayer(layer)})}function presenterShape(l){return make(l,.65)}function showPresenterType(t){if(groups[t])map.removeLayer(groups[t]);const g=L.featureGroup();layers.filter(l=>l.type===t).forEach(l=>presenterShape(l).addTo(g));groups[t]=g;if(g.getLayers().length)g.addTo(map)}function hidePresenterType(t){if(groups[t]){map.removeLayer(groups[t]);groups[t]=null}}function buildPresenter(){groups={};Object.keys(C).forEach(t=>groups[t]=null);clearOperationalLayers()}function renderPresenter(){const b=$("presenterList");if(!b)return;b.innerHTML="";Object.entries(C).forEach(([t,c])=>{const n=layers.filter(l=>l.type===t).length,row=document.createElement("label");row.className="presenterItem";row.dataset.type=t;row.innerHTML='<input type="checkbox" '+(n?"":"disabled")+'><span class="presenterSwatch" style="background:'+c.color+'"></span><div><div class="presenterName">'+c.name+'</div><div class="presenterMeta">'+(c.kind==="route"?"Ruta":"Zona")+" · "+n+" elemento"+(n===1?"":"s")+"</div></div>";const cb=row.querySelector("input");cb.onchange=()=>{if(cb.checked)showPresenterType(t);else hidePresenterType(t)};b.append(row)})}if(design){if(document.querySelectorAll(".type").length){document.querySelectorAll(".type").forEach(b=>b.onclick=()=>{document.querySelectorAll(".type").forEach(x=>x.classList.remove("active"));b.classList.add("active");type=b.dataset.type})}function buttons(){$("editSelected").disabled=drawing||!!editing||!layers.find(x=>x.id===selected);$("start").disabled=drawing||!!editing;$("finish").disabled=!drawing;$("cancel").disabled=!drawing;$("deletePoint").disabled=!editing||!window.editingVertex;$("saveEdit").disabled=!editing}function redraw(){if(!draft)return;draft.clearLayers();pts.forEach(p=>L.circleMarker([p.lat,p.lng],{pane:"draftPane",radius:5,color:"#173f67",weight:2,fillColor:"#fff",fillOpacity:1}).addTo(draft));if(pts.length>1){const a=pts.map(p=>[p.lat,p.lng]);route(type)?L.polyline(a,{pane:"draftPane",color:C[type].color,weight:4,dashArray:"7 6"}).addTo(draft):pts.length>2&&L.polygon(a,{pane:"draftPane",color:C[type].color,fillColor:C[type].color,fillOpacity:.18,dashArray:"5 4"}).addTo(draft)}}$("editSelected").onclick=async()=>{const l=layers.find(x=>x.id===selected);if(l)await editLayer(l)};$("start").onclick=async()=>{if(!cloudReady)return alert("Esperá a que termine de cargar el mapa desde Google Sheets.");if(editing)await finishEdit(editing);drawing=true;dirty=true;pts=[];draft=L.layerGroup().addTo(map);buttons()};$("cancel").onclick=()=>{drawing=false;pts=[];draft&&map.removeLayer(draft);draft=null;if(!editing)dirty=false;buttons()};$("deletePoint").onclick=()=>deleteSelectedVertex();$("saveEdit").onclick=async()=>{if(editing)await finishEdit(editing);else if(dirty){const ok=await save();if(ok)dirty=false}buttons();render()};$("finish").onclick=()=>{const min=route(type)?2:3;if(pts.length<min)return alert(route(type)?"Marcá al menos 2 puntos.":"Marcá al menos 3 puntos.");const nm=C[type].name;let l=layers.find(x=>x.type===type&&x.name.trim().toLowerCase()===nm.trim().toLowerCase());if(l){l.paths=(l.paths&&l.paths.length?l.paths:[l.points]);l.paths.push(pts.slice());l.points=l.paths[0];if(l.shape)map.removeLayer(l.shape);l.shape=make(l,.98).addTo(map)}else{l={id:"z"+Date.now(),name:nm,type:type,informacion:"",points:pts.slice(),paths:[pts.slice()],visible:true};l.shape=make(l,.98).addTo(map);layers.push(l)}$("cancel").click();save().then(ok=>{if(ok)dirty=false;render();fit(l)})};map.on("click",e=>{hideVertexMenu();if(drawing){pts.push({lat:e.latlng.lat,lng:e.latlng.lng});redraw()}});$("back").onclick=()=>$("modal").classList.remove("open");$("save").onclick=()=>{const t=canonicalType({type:$("zoneType").value})||$("zoneType").value,nm=$("zoneName").value.trim()||C[t].name,info=$("zoneInfo").value.trim();let l=layers.find(x=>x.type===t&&x.name.trim().toLowerCase()===nm.trim().toLowerCase());if(l){l.paths=(l.paths&&l.paths.length?l.paths:[l.points]);l.paths.push(pts.slice());l.points=l.paths[0];l.informacion=info;if(l.shape)map.removeLayer(l.shape);l.shape=make(l,.98).addTo(map)}else{l={id:"z"+Date.now(),name:nm,type:t,informacion:info,points:pts.slice(),paths:[pts.slice()],visible:true};l.shape=make(l,.98).addTo(map);layers.push(l)}$("modal").classList.remove("open");$("cancel").click();save().then(ok=>{if(ok)dirty=false;render();fit(l)})};Object.entries(C).forEach(([k,c])=>{const o=document.createElement("option");o.value=k;o.textContent=c.name;$("zoneType").append(o)});buttons();render();
+}function load(addToMap=design){try{const a=[];a.forEach(r=>{const ct=canonicalType(r),paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!ct||!paths.some(p=>Array.isArray(p)&&p.length>=2))return;const l={...r,type:ct,name:ct==="route_intendente"?"Ruta Alternativa":(String(r.name||"").trim()||C[ct].name),informacion:String(r.informacion||r.info||"").trim(),paths:paths,points:paths[0],visible:r.visible!==false};if(design){l.shape=make(l);if(addToMap&&l.visible)l.shape.addTo(map)}layers.push(l)})}catch(e){console.warn("No se pudieron cargar las capas",e)}}function clearOperationalLayers(){map.eachLayer(layer=>{if(layer!==baseLayer)map.removeLayer(layer)})}function presenterShape(l){return make(l,.65)}function showPresenterType(t){if(groups[t])map.removeLayer(groups[t]);const g=L.featureGroup();layers.filter(l=>l.type===t).forEach(l=>presenterShape(l).addTo(g));groups[t]=g;if(g.getLayers().length)g.addTo(map)}function hidePresenterType(t){if(groups[t]){map.removeLayer(groups[t]);groups[t]=null}}function buildPresenter(){groups={};Object.keys(C).forEach(t=>groups[t]=null);clearOperationalLayers()}function renderPresenter(){const b=$("presenterList");if(!b)return;b.innerHTML="";Object.entries(C).forEach(([t,c])=>{const n=layers.filter(l=>l.type===t).length,row=document.createElement("label");row.className="presenterItem";row.dataset.type=t;row.innerHTML='<input type="checkbox" '+(n?"":"disabled")+'><span class="presenterSwatch" style="background:'+c.color+'"></span><div><div class="presenterName">'+c.name+'</div><div class="presenterMeta">'+(c.kind==="route"?"Ruta":"Zona")+" · "+n+" elemento"+(n===1?"":"s")+"</div></div>";const cb=row.querySelector("input");cb.onchange=()=>{if(cb.checked)showPresenterType(t);else hidePresenterType(t)};b.append(row)})}if(design){if(document.querySelectorAll(".type").length){document.querySelectorAll(".type").forEach(b=>b.onclick=()=>{document.querySelectorAll(".type").forEach(x=>x.classList.remove("active"));b.classList.add("active");type=b.dataset.type})}function buttons(){$("editSelected").disabled=drawing||!!editing||!layers.find(x=>x.id===selected);$("start").disabled=drawing||!!editing;$("finish").disabled=!drawing;$("cancel").disabled=!drawing;$("deletePoint").disabled=!editing||!window.editingVertex;$("saveEdit").disabled=!editing}function redraw(){if(!draft)return;draft.clearLayers();pts.forEach(p=>L.circleMarker([p.lat,p.lng],{pane:"draftPane",radius:5,color:"#173f67",weight:2,fillColor:"#fff",fillOpacity:1}).addTo(draft));if(pts.length>1){const a=pts.map(p=>[p.lat,p.lng]);route(type)?L.polyline(a,{pane:"draftPane",color:C[type].color,weight:4,dashArray:"7 6"}).addTo(draft):pts.length>2&&L.polygon(a,{pane:"draftPane",color:C[type].color,fillColor:C[type].color,fillOpacity:.18,dashArray:"5 4"}).addTo(draft)}}$("editSelected").onclick=async()=>{const l=layers.find(x=>x.id===selected);if(l)await editLayer(l)};$("start").onclick=async()=>{if(!cloudReady)return alert("Esperá a que termine de cargar el mapa desde Google Sheets.");if(editing)await finishEdit(editing);drawing=true;dirty=true;pts=[];draft=L.layerGroup().addTo(map);buttons()};$("cancel").onclick=()=>{drawing=false;pts=[];draft&&map.removeLayer(draft);draft=null;if(!editing)dirty=false;buttons()};$("deletePoint").onclick=()=>deleteSelectedVertex();
+window.addEventListener("keydown",e=>{
+ if(!editing||!window.editingVertex)return;
+ if(e.key==="Delete"||e.key==="Backspace"){
+  const v={...window.editingVertex};
+  e.preventDefault();
+  deleteSelectedVertex(v);
+ }
+});$("saveEdit").onclick=async()=>{if(editing)await finishEdit(editing);else if(dirty){const ok=await save();if(ok)dirty=false}buttons();render()};$("finish").onclick=()=>{const min=route(type)?2:3;if(pts.length<min)return alert(route(type)?"Marcá al menos 2 puntos.":"Marcá al menos 3 puntos.");const nm=C[type].name;let l=layers.find(x=>x.type===type&&x.name.trim().toLowerCase()===nm.trim().toLowerCase());if(l){l.paths=(l.paths&&l.paths.length?l.paths:[l.points]);l.paths.push(pts.slice());l.points=l.paths[0];if(l.shape)map.removeLayer(l.shape);l.shape=make(l,.98).addTo(map)}else{l={id:"z"+Date.now(),name:nm,type:type,informacion:"",points:pts.slice(),paths:[pts.slice()],visible:true};l.shape=make(l,.98).addTo(map);layers.push(l)}$("cancel").click();save().then(ok=>{if(ok)dirty=false;render();fit(l)})};map.on("click",e=>{hideVertexMenu();if(drawing){pts.push({lat:e.latlng.lat,lng:e.latlng.lng});redraw()}});$("back").onclick=()=>$("modal").classList.remove("open");$("save").onclick=()=>{const t=canonicalType({type:$("zoneType").value})||$("zoneType").value,nm=$("zoneName").value.trim()||C[t].name,info=$("zoneInfo").value.trim();let l=layers.find(x=>x.type===t&&x.name.trim().toLowerCase()===nm.trim().toLowerCase());if(l){l.paths=(l.paths&&l.paths.length?l.paths:[l.points]);l.paths.push(pts.slice());l.points=l.paths[0];l.informacion=info;if(l.shape)map.removeLayer(l.shape);l.shape=make(l,.98).addTo(map)}else{l={id:"z"+Date.now(),name:nm,type:t,informacion:info,points:pts.slice(),paths:[pts.slice()],visible:true};l.shape=make(l,.98).addTo(map);layers.push(l)}$("modal").classList.remove("open");$("cancel").click();save().then(ok=>{if(ok)dirty=false;render();fit(l)})};Object.entries(C).forEach(([k,c])=>{const o=document.createElement("option");o.value=k;o.textContent=c.name;$("zoneType").append(o)});buttons();render();
 cloudLoadPromise=loadCloud(true).then(ok=>{cloudReady=ok;buttons();render();if(!ok)alert("No se pudo cargar el mapa desde Google Sheets. No se habilitó el dibujo para evitar perder datos.");return ok});
 }else{buildPresenter();renderPresenter();cloudLoadPromise=(async()=>{let ok=false;for(let intento=1;intento<=3&&!ok;intento++){ok=await loadCloud(false);if(!ok&&intento<3)await new Promise(r=>setTimeout(r,900));}cloudReady=ok;buildPresenter();renderPresenter();if(ok){Object.keys(C).forEach(t=>showPresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=true);const pts=layers.flatMap(l=>(l.paths&&l.paths.length?l.paths:[l.points]).flat()).filter(p=>p&&isFinite(p.lat)&&isFinite(p.lng));if(pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lng])).pad(.12),{maxZoom:16});}setTimeout(()=>map.invalidateSize(true),100);setTimeout(()=>map.invalidateSize(true),600);setTimeout(()=>map.invalidateSize(true),1500);if(!ok)console.warn("Presentador: no se pudo cargar Google Sheets");return ok})();$("showAll").onclick=()=>{Object.keys(C).forEach(t=>showPresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=true);setTimeout(()=>map.invalidateSize(true),100)};$("hideAll").onclick=()=>{Object.keys(C).forEach(t=>hidePresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=false)}}})();
