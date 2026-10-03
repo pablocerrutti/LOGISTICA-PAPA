@@ -211,7 +211,7 @@ function refreshEditMarkers(l){
    });
    m.on("dragend",()=>{dirty=true;});
    m.on("contextmenu",e=>{
-    if(!editing||editing!==l||!route(l.type))return;
+    if(!editing||editing!==l)return;
     L.DomEvent.stop(e);
     window.editingVertex={layer:l,pathIndex,pointIndex,marker:m};
     editMarkers.forEach(x=>x.setIcon(editVertexIcon(x===m)));
@@ -225,7 +225,7 @@ function refreshEditMarkers(l){
   });
  });
 }
-function isolateLayer(l){if(!l)return;if(isolatedVisibility===null)isolatedVisibility=new Map(layers.map(x=>[x.id,x.visible]));layers.forEach(x=>{x.visible=x===l;if(x.shape){if(x===l)x.shape.addTo(map);else map.removeLayer(x.shape)}});selected=l.id}
+function isolateLayer(l){if(!l)return;if(isolatedVisibility===null)isolatedVisibility=new Map(layers.map(x=>[x.id,x.visible]));layers.forEach(x=>{x.visible=x===l;if(x.shape){if(x===l)x.shape.addTo(map);else map.removeLayer(x.shape)}});selected=l.id;if(l.shape){l.shape.eachLayer(x=>{if(x.bringToFront)x.bringToFront()})}}
 function restoreIsolatedLayers(){if(isolatedVisibility===null)return;layers.forEach(x=>{const v=isolatedVisibility.get(x.id);if(v!==undefined)x.visible=v;if(x.shape){if(x.visible)x.shape.addTo(map);else map.removeLayer(x.shape)}});isolatedVisibility=null}
 function activateMoveSelectedVertex(){const v=window.editingVertex;if(!v||!editing||v.layer!==editing)return;v.marker.dragging.enable();v.marker.setIcon(editVertexIcon(true));try{v.marker.bindTooltip("Arrastrá este punto para moverlo",{permanent:true,direction:"top",offset:[0,-10],opacity:.9}).openTooltip();setTimeout(()=>{try{v.marker.closeTooltip();v.marker.unbindTooltip()}catch(_){ }},2200)}catch(_){ }buttons()}
 function selectVertex(l,pathIndex,pointIndex){
@@ -271,6 +271,7 @@ async function finishEdit(l){
  if(ok)dirty=false;
  render();
  restoreIsolatedLayers();
+ render();
  fit(target);
  buttons();
  return ok;
