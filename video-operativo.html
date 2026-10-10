@@ -114,7 +114,7 @@ function shapeFor(l){
 }
 function sceneLayers(s){
  let chosen=all.filter(l=>s.types.includes(l.type));
- if(s.match){const matched=chosen.filter(l=>s.match.some(term=>String(l.name||"").toLowerCase().includes(term)));if(matched.length)chosen=matched;else if(s.onlyUnmatched)chosen=[];else if(s.fallbackText)s.text=s.fallbackText;}
+ if(s.match){const matched=chosen.filter(l=>s.match.some(term=>String(l.name||"").toLowerCase().includes(term)));if(matched.length)chosen=matched;else if(s.onlyUnmatched)chosen=[];else {chosen=[];if(s.fallbackText)s.text=s.fallbackText+" No se encontró una capa con nombre específico de delegación/oficial; el estacionamiento general se mostrará al final.";}}
  if(s.onlyUnmatched){const delegation=all.filter(l=>l.type==="zone_estacionamiento"&&["delegación","delegacion","oficial"].some(t=>String(l.name||"").toLowerCase().includes(t)));chosen=chosen.filter(l=>!delegation.includes(l));}
  return chosen;
 }
