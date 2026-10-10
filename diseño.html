@@ -26,9 +26,10 @@ button,.btn,.logoutBtn,.type,.layerItem,.presenterItem{touch-action:manipulation
   .leaflet-popup-content-wrapper{max-width:calc(100vw - 28px)}
 }
 @media (orientation:landscape) and (max-width:900px){
-  #app{grid-template-rows:100%;display:block}
-  #app>main{position:absolute;inset:0;height:100dvh}
-  #app>aside{height:100dvh;max-height:100dvh}
+  #app{display:grid;grid-template-columns:minmax(250px,36vw) minmax(0,1fr);grid-template-rows:100%;height:100dvh}
+  #app>aside{grid-column:1;grid-row:1;position:relative;height:100dvh;max-height:100dvh;min-height:0;overflow-y:auto;overflow-x:hidden;z-index:2}
+  #app>main{grid-column:2;grid-row:1;position:relative;inset:auto;height:100dvh;min-height:0}
+  #app>main #map{height:100%;min-height:0}
 }
 @media (orientation:portrait) and (max-width:900px){
   #app>main #map{min-height:0}
