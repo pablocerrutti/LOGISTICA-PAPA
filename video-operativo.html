@@ -19,6 +19,16 @@
 .progressTrack{height:4px;border-radius:4px;background:#ffffff36;overflow:hidden;margin:0 2px 11px}.progress{height:100%;width:0;background:var(--gold);transition:width .1s linear}
 .controls{display:flex;align-items:center;gap:9px}.ctrl{border:1px solid #ffffff50;background:#ffffff12;color:#fff;border-radius:9px;padding:10px 13px;font-size:11px;font-weight:850;cursor:pointer}.ctrl.primary{background:#e9c66f;color:#102f4b;border-color:#e9c66f}.ctrl:disabled{opacity:.4;cursor:not-allowed}.clock{font-size:11px;font-variant-numeric:tabular-nums;color:#dce7ef;white-space:nowrap}.spacer{flex:1}.hint{font-size:10px;color:#dce7ef;max-width:270px;text-align:right;line-height:1.35}
 #loading{position:absolute;z-index:2000;inset:0;background:#f1f5f7;display:grid;place-items:center;text-align:center;padding:24px;transition:opacity .35s}.loadcard{max-width:400px}.spinner{width:34px;height:34px;border:3px solid #cdd9e2;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}@keyframes spin{to{transform:rotate(360deg)}}.loadtitle{font-weight:900;font-size:18px;color:var(--navy)}.loadmsg{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+#loading{background:linear-gradient(135deg,#063b68 0%,#0b568e 52%,#173f67 100%);color:#fff}
+#loading::before{content:"";position:absolute;inset:-3%;background:url("https://raw.githubusercontent.com/pablocerrutti/LOGISTICA-PAPA/main/LEON%20XIV.png") center center/contain no-repeat;opacity:.5;animation:fadeLeonPublic 2.2s ease-out .15s both;mask-image:radial-gradient(ellipse 68% 68% at center,#000 52%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 68% 68% at center,#000 52%,transparent 100%);pointer-events:none}
+@keyframes fadeLeonPublic{from{opacity:0}to{opacity:.5}}
+#loading .loadcard{position:relative;z-index:1;width:min(92vw,430px);padding:34px 24px}
+#loading .loadtitle{font-size:clamp(23px,4vw,29px);color:#fff;margin:7px 0}
+#loading .loadmsg{font-size:14px;color:#e2edf5;margin-top:8px}
+#loading .loadkicker{font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:#e9c66f}
+#loading .loadlogo{width:96px;height:96px;object-fit:contain;border-radius:14px;margin:14px auto 10px;display:block;filter:brightness(0) invert(1)}
+#loading .spinner{width:42px;height:42px;border:4px solid #ffffff45;border-top-color:#e9c66f;margin:24px auto 0}
+#loading.hide{opacity:0;visibility:hidden;pointer-events:none}
 #error{display:none;position:absolute;z-index:2100;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100% - 30px));padding:24px;border-radius:16px;background:#fff;box-shadow:0 20px 70px #0004}.errorTitle{font-size:20px;font-weight:900}.errorText{font-size:13px;line-height:1.55;color:#536575;margin:10px 0 18px}
 .maplabel{background:#102f4b;color:#fff;border:1px solid #ffffffdd;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900;box-shadow:0 3px 10px #0004;white-space:nowrap}.leaflet-tooltip:before{display:none}
 @media(max-width:650px){.topbar{padding:10px 12px;gap:9px}.brandmark{width:35px;height:35px;flex-basis:35px;border-radius:9px}.eyebrow{font-size:8px}.branddesc{font-size:9px}.counter{padding:6px 8px;font-size:9px}.caption{bottom:100px;padding:15px;border-radius:13px}.sceneTitle{font-size:22px}.sceneText{font-size:12px}.swatches{gap:5px}.swatch{font-size:9px;padding:5px 7px}.timeline{padding:9px 10px max(9px,env(safe-area-inset-bottom))}.ctrl{padding:9px 10px;font-size:10px}.hint{display:none}.clock{margin-left:auto}}
@@ -42,7 +52,7 @@
    <button class="ctrl" id="record">● Grabar video</button><span class="hint" id="hint">Para guardar el video, permití compartir esta pestaña cuando el navegador lo solicite.</span>
   </div>
  </div>
- <div id="loading"><div class="loadcard"><div class="spinner"></div><div class="loadtitle">Preparando el mapa operativo</div><div class="loadmsg">Conectando con Google Sheets para utilizar las rutas y zonas publicadas, sin crear una copia local.</div></div></div>
+ <div id="loading"><div class="loadcard"><img class="loadlogo" src="Logo.png" alt="Intendencia Departamental de Florida"><div class="loadkicker">Intendencia Departamental de Florida</div><div class="loadtitle">Visita del Papa León XIV - Mapa Logístico</div><div class="loadmsg" id="loadmsg">Cargando mapa interactivo y operativa...</div><div class="spinner"></div></div></div>
  <div id="error"><div class="errorTitle">No se pudo cargar el mapa</div><div class="errorText" id="errorText">No fue posible consultar las capas en Google Sheets.</div><button class="ctrl primary" onclick="location.reload()">Reintentar</button></div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -70,7 +80,7 @@ const map=L.map("map",{preferCanvas:true,zoomControl:false,attributionControl:tr
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"© OpenStreetMap"}).addTo(map);
 const all=[],rendered=new Map();let sceneIndex=-1,playing=false,startedAt=0,elapsedBefore=0,raf=0,recorder=null,recordStream=null,recordedChunks=[],recording=false;
 const scenes=[
- {duration:14000,title:"Recorrido del papamóvil y ruta alternativa",text:"Se presentan el trayecto principal del Sumo Pontífice y la ruta alternativa prevista para el operativo.",types:["route_pontifice","route_intendente"],match:null},
+ {duration:12000,title:"Recorrido del papamóvil y ruta alternativa",text:"Se presentan el trayecto principal del Sumo Pontífice y la ruta alternativa prevista para el operativo.",types:["route_pontifice","route_intendente"],match:null},
  {duration:9000,title:"Estacionamiento de la delegación oficial",text:"Se identifica el área de estacionamiento prevista para la delegación oficial. Se muestran los elementos que en el mapa publicado estén identificados con esa referencia.",types:["zone_estacionamiento"],match:["delegación","delegacion","oficial"],fallbackText:"Se presenta la zona de estacionamiento permitida registrada en el mapa. Confirmar la denominación específica de la delegación oficial en la capa publicada."},
  {duration:12000,title:"Ingreso y egreso de micros y ómnibus de excursiones",text:"Se destaca el circuito asignado al transporte de excursiones para ordenar su ingreso y egreso.",types:["route_excursiones"]},
  {duration:8000,title:"Descenso de pasajeros",text:"Se incorpora la zona destinada exclusivamente al descenso de pasajeros, diferenciada del estacionamiento.",types:["zone_descenso"]},
@@ -80,9 +90,9 @@ const scenes=[
  {duration:12000,title:"Estacionamiento de prensa acreditada",text:"Se muestran las áreas reservadas a prensa del Vaticano y prensa nacional/local, cada una con su referencia.",types:["zone_prensa_vaticano","zone_prensa_nacional"]},
  {duration:10000,title:"Zona de exclusión peatonal",text:"Se delimita el sector de exclusión, destinado al tránsito peatonal según la organización del operativo.",types:["zone_exclusion"]},
  {duration:7000,title:"Zonas de estacionamiento permitido",text:"Se completa la presentación con las zonas de estacionamiento permitido para automóviles. No habilitan el estacionamiento de otros tipos de vehículos.",types:["zone_estacionamiento"],match:null,onlyUnmatched:true}
-,{duration:10000,title:"Vista general del operativo",text:"Todas las rutas y zonas quedan visibles simultáneamente para cerrar la presentación con una visión integral del dispositivo logístico.",types:Object.keys(C),closing:true}
+,{duration:8000,title:"Vista general del operativo",text:"Todas las rutas y zonas quedan visibles simultáneamente para cerrar la presentación con una visión integral del dispositivo logístico.",types:Object.keys(C),closing:true}
 ];
-const TOTAL=scenes.reduce((sum,s)=>sum+s.duration,0);
+const INTRO_MS=4000;const TOTAL=INTRO_MS+scenes.reduce((sum,s)=>sum+s.duration,0);
 function sceneStart(i){return scenes.slice(0,Math.max(0,i)).reduce((sum,s)=>sum+s.duration,0)}
 function sceneAt(ms){let t=0;for(let i=0;i<scenes.length;i++){t+=scenes[i].duration;if(ms<t)return i;}return scenes.length-1;}
 function canon(r){
@@ -138,17 +148,18 @@ function showScene(i,fit=true){
  const now=playing?elapsedBefore+(performance.now()-startedAt):elapsedBefore;
  $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
 }
+function setIntro(show){const el=$("loading");if(!el)return;if(show){el.classList.remove("hide");el.style.display="grid";el.style.opacity="1";}else{el.classList.add("hide");setTimeout(()=>{if(el.classList.contains("hide"))el.style.display="none";},650);}}
 function updateClock(ms){const secs=Math.max(0,Math.min(Math.ceil(TOTAL/1000),Math.floor(ms/1000)));$("clock").textContent=String(Math.floor(secs/60)).padStart(2,"0")+":"+String(secs%60).padStart(2,"0")+" / 02:00";}
 function tick(){
  if(!playing)return;const now=elapsedBefore+(performance.now()-startedAt);
  $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
- const idx=sceneAt(now);
- if(idx!==sceneIndex)showScene(idx,true);
+ const inIntro=now<INTRO_MS;setIntro(inIntro);
+ if(!inIntro){const idx=sceneAt(now-INTRO_MS);if(idx!==sceneIndex)showScene(idx,true);}
  if(now>=TOTAL){elapsedBefore=TOTAL;playing=false;cancelAnimationFrame(raf);$("play").textContent="↺ Reproducir otra vez";$("counter").textContent="PRESENTACIÓN COMPLETA";$("progress").style.width="100%";updateClock(TOTAL);if(recording&&recorder&&recorder.state!=="inactive")recorder.stop();return;}
  raf=requestAnimationFrame(tick);
 }
-function play(){if(elapsedBefore>=TOTAL){elapsedBefore=0;clearMapLayers();sceneIndex=-1;showScene(0,true);}if(!playing){playing=true;startedAt=performance.now();$("play").textContent="Ⅱ Pausar";raf=requestAnimationFrame(tick);}else{elapsedBefore+=performance.now()-startedAt;playing=false;cancelAnimationFrame(raf);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);}}
-function reset(){playing=false;cancelAnimationFrame(raf);elapsedBefore=0;clearMapLayers();sceneIndex=-1;showScene(0,true);$("play").textContent="▶ Reproducir";$("progress").style.width="0%";updateClock(0);}
+function play(){if(elapsedBefore>=TOTAL){elapsedBefore=0;clearMapLayers();sceneIndex=-1;setIntro(true);}if(!playing){setIntro(elapsedBefore<INTRO_MS);playing=true;startedAt=performance.now();$("play").textContent="Ⅱ Pausar";raf=requestAnimationFrame(tick);}else{elapsedBefore+=performance.now()-startedAt;playing=false;cancelAnimationFrame(raf);setIntro(elapsedBefore<INTRO_MS);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);}}
+function reset(){playing=false;cancelAnimationFrame(raf);elapsedBefore=0;clearMapLayers();sceneIndex=-1;setIntro(true);$("counter").textContent="INICIO DE LA PRESENTACIÓN";$("play").textContent="▶ Reproducir";$("progress").style.width="0%";updateClock(0);}
 async function load(){
  const res=await fetch(API+"?accion=obtenerLogisticaPapa&t="+Date.now(),{cache:"no-store",redirect:"follow"});
  const raw=await res.text();let d;try{d=JSON.parse(raw)}catch(_){throw new Error("Google Sheets devolvió una respuesta que no es JSON. Comprobá la conexión y los permisos de publicación del Apps Script.");}
@@ -158,7 +169,7 @@ async function load(){
  data.forEach((r,i)=>{const type=canon(r),paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!type||!paths.some(p=>Array.isArray(p)&&p.length>=2))return;all.push({...r,id:String(r.id||type+"-"+i),type,name:type==="route_intendente"?"Ruta alternativa":(String(r.name||"").trim()||C[type].name),paths,points:paths[0]});});
  if(!all.length)throw new Error("Google Sheets respondió, pero no se encontraron rutas o zonas válidas para animar.");
 }
-$("play").onclick=play;$("restart").onclick=reset;$("prev").onclick=()=>{playing=false;cancelAnimationFrame(raf);elapsedBefore=sceneStart(Math.max(0,sceneIndex-1));showScene(Math.max(0,sceneIndex-1),true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};$("next").onclick=()=>{if(sceneIndex>=scenes.length-1){reset();return;}playing=false;cancelAnimationFrame(raf);elapsedBefore=sceneStart(sceneIndex+1);showScene(sceneIndex+1,true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};
+$("play").onclick=play;$("restart").onclick=reset;$("prev").onclick=()=>{playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(Math.max(0,sceneIndex-1));setIntro(false);showScene(Math.max(0,sceneIndex-1),true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};$("next").onclick=()=>{if(sceneIndex>=scenes.length-1){reset();return;}playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(sceneIndex+1);setIntro(false);showScene(sceneIndex+1,true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};
 $("record").onclick=async()=>{
  if(recording){if(recorder&&recorder.state!=="inactive")recorder.stop();return;}
  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){alert("La grabación directa no está disponible en este navegador. Podés reproducir la presentación y grabar la pestaña con una herramienta de captura de pantalla.");return;}
@@ -175,9 +186,9 @@ $("record").onclick=async()=>{
 };
 window.addEventListener("resize",()=>map.invalidateSize(true));
 load().then(()=>{
- $("loading").style.opacity="0";setTimeout(()=>$("loading").remove(),400);
  const b=boundsFor(all);if(b.isValid())map.fitBounds(b.pad(.12),{animate:false,maxZoom:15});
- showScene(0,false);$("sceneText").textContent="El mapa está listo. La presentación dura 2 minutos y utiliza las rutas y zonas consultadas directamente desde Google Sheets.";
+ sceneIndex=-1;$("counter").textContent="PRESENTACIÓN LISTA";$("loadmsg").textContent="Preparando la presentación operativa...";setIntro(true);
+ setTimeout(()=>{if(!playing&&elapsedBefore===0){setIntro(false);showScene(0,false);$("sceneText").textContent="El mapa está listo. La presentación incluye la animación institucional de inicio.";}},3600);
 }).catch(e=>{$("loading").style.display="none";$("error").style.display="block";$("errorText").textContent=e.message;});
 })();
 </script>
