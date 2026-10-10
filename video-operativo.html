@@ -133,8 +133,8 @@ function showScene(i,fit=true){
  const types=[...new Set(newly.map(l=>l.type))];
  $("swatches").innerHTML=types.map(t=>'<span class="swatch"><i class="dot" style="background:'+C[t].color+'"></i>'+esc(C[t].name)+'</span>').join("");
  $("counter").textContent="ETAPA "+String(sceneIndex+1).padStart(2,"0")+" DE "+String(scenes.length);
- if(fit){const focus=s.closing?all:newly;const b=boundsFor(focus);if(b.isValid())map.fitBounds(b.pad(.13),{animate:true,duration:1.1,maxZoom:16);}
- $("prev").disabled=sceneIndex===0;$("next").textContent=sceneIndex===scenes.length-1?"Ver cierre →":"Siguiente →";
+ if(fit){const focus=s.closing?all:newly;const b=boundsFor(focus);if(b.isValid())map.fitBounds(b.pad(.13),{animate:true,duration:1.1,maxZoom:16});}
+ $("prev").disabled=sceneIndex===0;$("next").textContent=sceneIndex===scenes.length-1?"Reiniciar presentación":"Siguiente →";
  const now=playing?elapsedBefore+(performance.now()-startedAt):elapsedBefore;
  $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
 }
