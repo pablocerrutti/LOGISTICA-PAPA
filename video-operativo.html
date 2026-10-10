@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Presentación animada del operativo · LOGISTICA-PAPA</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--navy:#123b60;--blue:#174f7b;--gold:#d5a53c;--ink:#172b3a;--muted:#647584;--paper:#fff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,Arial,sans-serif;color:var(--ink);background:#0a1c2b}body{overflow:hidden}
+#stage{position:relative;width:100%;height:100%;overflow:hidden;background:#dbe5eb}#map{position:absolute;inset:0;z-index:1}
+.topbar{position:absolute;z-index:900;top:0;left:0;right:0;display:flex;align-items:center;gap:16px;padding:16px 22px;color:white;background:linear-gradient(180deg,#0b2948ed,#0b2948a8 78%,transparent);pointer-events:none}
+.brandmark{width:44px;height:44px;flex:0 0 44px;border:1px solid #ffffff65;border-radius:12px;display:grid;place-items:center;font-weight:950;letter-spacing:-1px;color:#fff;background:#ffffff14}
+.brandtext{min-width:0}.eyebrow{font-size:10px;letter-spacing:.19em;font-weight:900;text-transform:uppercase;color:#e9c66f}.brandtitle{font-size:clamp(15px,2.2vw,24px);font-weight:900;line-height:1.12;margin-top:4px}.branddesc{font-size:11px;color:#e3edf5;margin-top:4px}
+.counter{margin-left:auto;align-self:flex-start;white-space:nowrap;border:1px solid #ffffff55;background:#0b2948b8;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:850}
+.caption{position:absolute;z-index:900;left:clamp(14px,3vw,42px);bottom:clamp(92px,12vh,130px);width:min(590px,calc(100% - 28px));padding:clamp(16px,2.4vw,28px);border-radius:18px;color:#fff;background:linear-gradient(135deg,#102f4bea,#123b60e8);box-shadow:0 18px 50px #07172540;border:1px solid #ffffff38;backdrop-filter:blur(8px);transition:opacity .4s,transform .4s}
+.kicker{font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#e9c66f}.sceneTitle{font-size:clamp(20px,3vw,34px);font-weight:950;line-height:1.05;margin:8px 0 9px}.sceneText{font-size:clamp(12px,1.3vw,15px);line-height:1.5;color:#e4edf4;max-width:58ch}.swatches{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}.swatch{display:flex;align-items:center;gap:7px;border:1px solid #ffffff48;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;background:#ffffff0e}.dot{width:10px;height:10px;border-radius:3px;display:inline-block;box-shadow:0 0 0 1px #ffffff55}
+.timeline{position:absolute;z-index:920;bottom:0;left:0;right:0;padding:12px 18px max(12px,env(safe-area-inset-bottom));background:linear-gradient(0deg,#091c2cf5,#091c2ce8 75%,transparent);color:#fff}
+.progressTrack{height:4px;border-radius:4px;background:#ffffff36;overflow:hidden;margin:0 2px 11px}.progress{height:100%;width:0;background:var(--gold);transition:width .1s linear}
+.controls{display:flex;align-items:center;gap:9px}.ctrl{border:1px solid #ffffff50;background:#ffffff12;color:#fff;border-radius:9px;padding:10px 13px;font-size:11px;font-weight:850;cursor:pointer}.ctrl.primary{background:#e9c66f;color:#102f4b;border-color:#e9c66f}.ctrl:disabled{opacity:.4;cursor:not-allowed}.clock{font-size:11px;font-variant-numeric:tabular-nums;color:#dce7ef;white-space:nowrap}.spacer{flex:1}.hint{font-size:10px;color:#dce7ef;max-width:270px;text-align:right;line-height:1.35}
+#loading{position:absolute;z-index:2000;inset:0;background:#f1f5f7;display:grid;place-items:center;text-align:center;padding:24px;transition:opacity .35s}.loadcard{max-width:400px}.spinner{width:34px;height:34px;border:3px solid #cdd9e2;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}@keyframes spin{to{transform:rotate(360deg)}}.loadtitle{font-weight:900;font-size:18px;color:var(--navy)}.loadmsg{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+#error{display:none;position:absolute;z-index:2100;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100% - 30px));padding:24px;border-radius:16px;background:#fff;box-shadow:0 20px 70px #0004}.errorTitle{font-size:20px;font-weight:900}.errorText{font-size:13px;line-height:1.55;color:#536575;margin:10px 0 18px}
+.maplabel{background:#102f4b;color:#fff;border:1px solid #ffffffdd;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900;box-shadow:0 3px 10px #0004;white-space:nowrap}.leaflet-tooltip:before{display:none}
+@media(max-width:650px){.topbar{padding:10px 12px;gap:9px}.brandmark{width:35px;height:35px;flex-basis:35px;border-radius:9px}.eyebrow{font-size:8px}.branddesc{font-size:9px}.counter{padding:6px 8px;font-size:9px}.caption{bottom:100px;padding:15px;border-radius:13px}.sceneTitle{font-size:22px}.sceneText{font-size:12px}.swatches{gap:5px}.swatch{font-size:9px;padding:5px 7px}.timeline{padding:9px 10px max(9px,env(safe-area-inset-bottom))}.ctrl{padding:9px 10px;font-size:10px}.hint{display:none}.clock{margin-left:auto}}
+@media print{.timeline{display:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+ <div id="map"></div>
+ <div class="topbar">
+  <div class="brandmark">LP</div>
+  <div class="brandtext"><div class="eyebrow">Intendencia Departamental de Florida</div><div class="brandtitle">OPERATIVO · VISITA DEL SUMO PONTÍFICE</div><div class="branddesc">Presentación animada de rutas, accesos y zonas operativas</div></div>
+  <div class="counter" id="counter">CARGANDO MAPA</div>
+ </div>
+ <section class="caption" id="caption" aria-live="polite"><div class="kicker" id="kicker">PLANIFICACIÓN LOGÍSTICA</div><div class="sceneTitle" id="sceneTitle">Preparando presentación</div><div class="sceneText" id="sceneText">Consultando la información publicada en Google Sheets.</div><div class="swatches" id="swatches"></div></section>
+ <div class="timeline">
+  <div class="progressTrack"><div class="progress" id="progress"></div></div>
+  <div class="controls">
+   <button class="ctrl" id="restart">↺ Reiniciar</button><button class="ctrl primary" id="play">▶ Reproducir</button><button class="ctrl" id="prev">← Anterior</button><button class="ctrl" id="next">Siguiente →</button>
+   <span class="clock" id="clock">00:00 / 02:00</span><span class="spacer"></span>
+   <button class="ctrl" id="record">● Grabar video</button><span class="hint" id="hint">Para guardar el video, permití compartir esta pestaña cuando el navegador lo solicite.</span>
+  </div>
+ </div>
+ <div id="loading"><div class="loadcard"><div class="spinner"></div><div class="loadtitle">Preparando el mapa operativo</div><div class="loadmsg">Conectando con Google Sheets para utilizar las rutas y zonas publicadas, sin crear una copia local.</div></div></div>
+ <div id="error"><div class="errorTitle">No se pudo cargar el mapa</div><div class="errorText" id="errorText">No fue posible consultar las capas en Google Sheets.</div><button class="ctrl primary" onclick="location.reload()">Reintentar</button></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(()=> {
+"use strict";
+const API="https://script.google.com/macros/s/AKfycbwuH_br7N-DhY6DIqn8v9IfWrXQ4uvswqQh4WKKQd9RnGn2sM5gkeV8HF1_h2KU9njo/exec";
+const C={
+ route_pontifice:{name:"Recorrido del Sumo Pontífice en papamóvil",color:"#e00000",kind:"route",weight:8},
+ route_intendente:{name:"Ruta alternativa",color:"#f28c00",kind:"route",weight:7},
+ route_excursiones:{name:"Ruta de ómnibus y micros de excursiones",color:"#ffd400",kind:"route",weight:7},
+ route_interdepartamental:{name:"Ruta de ómnibus interdepartamentales de línea",color:"#0066ff",kind:"route",weight:7},
+ route_discapacidad:{name:"Acceso exclusivo para vehículos de personas con discapacidad",color:"#8b5a2b",kind:"route",weight:7},
+ zone_exclusion:{name:"Zona de exclusión · solo peatonal",color:"#000000",kind:"zone"},
+ zone_estacionamiento:{name:"Estacionamiento permitido · exclusivo para automóviles",color:"#16a34a",kind:"zone"},
+ zone_excursiones:{name:"Estacionamiento de ómnibus y micros de excursiones",color:"#ffd400",kind:"zone"},
+ zone_descenso:{name:"Zona de descenso de pasajeros",color:"#22cfe5",kind:"zone"},
+ zone_prensa_vaticano:{name:"Prensa del Vaticano",color:"#6f2da8",kind:"zone"},
+ zone_prensa_nacional:{name:"Prensa nacional/local",color:"#d63384",kind:"zone"},
+ zone_discapacidad:{name:"Estacionamiento reservado para personas con discapacidad",color:"#8b5a2b",kind:"zone"},
+ zone_terminal_temporal:{name:"Terminal temporal de ómnibus interdepartamentales",color:"#7c3aed",kind:"zone"}
+};
+const $=id=>document.getElementById(id);
+const map=L.map("map",{preferCanvas:true,zoomControl:false,attributionControl:true}).setView([-34.0958,-56.2142],14);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"© OpenStreetMap"}).addTo(map);
+const all=[],rendered=new Map();let sceneIndex=-1,playing=false,startedAt=0,elapsedBefore=0,raf=0,recorder=null,recordStream=null,recordedChunks=[],recording=false;
+const TOTAL=120000,SCENE_MS=12000;
+const scenes=[
+ {title:"Recorrido del papamóvil y ruta alternativa",text:"Se presentan el trayecto principal del Sumo Pontífice y la ruta alternativa prevista para el operativo.",types:["route_pontifice","route_intendente"],match:null},
+ {title:"Estacionamiento de la delegación oficial",text:"Se identifica el área de estacionamiento prevista para la delegación oficial. Se muestran los elementos que en el mapa publicado estén identificados con esa referencia.",types:["zone_estacionamiento"],match:["delegación","delegacion","oficial"],fallbackText:"Se presenta la zona de estacionamiento permitida registrada en el mapa. Confirmar la denominación específica de la delegación oficial en la capa publicada."},
+ {title:"Ingreso y egreso de micros y ómnibus de excursiones",text:"Se destaca el circuito asignado al transporte de excursiones para ordenar su ingreso y egreso.",types:["route_excursiones"]},
+ {title:"Descenso de pasajeros",text:"Se incorpora la zona destinada exclusivamente al descenso de pasajeros, diferenciada del estacionamiento.",types:["zone_descenso"]},
+ {title:"Estacionamiento de ómnibus y micros de excursiones",text:"Se muestra el área reservada a los vehículos de excursiones. No debe confundirse con el estacionamiento de automóviles.",types:["zone_excursiones"]},
+ {title:"Acceso de ómnibus de línea y terminal temporal",text:"Se incorpora el circuito de las líneas interdepartamentales y la terminal temporal prevista para estos servicios.",types:["route_interdepartamental","zone_terminal_temporal"]},
+ {title:"Acceso y estacionamiento para personas con discapacidad",text:"Se presentan el acceso vehicular y el estacionamiento reservado, identificados con la misma referencia cromática.",types:["route_discapacidad","zone_discapacidad"]},
+ {title:"Estacionamiento de prensa acreditada",text:"Se muestran las áreas reservadas a prensa del Vaticano y prensa nacional/local, cada una con su referencia.",types:["zone_prensa_vaticano","zone_prensa_nacional"]},
+ {title:"Zona de exclusión peatonal",text:"Se delimita el sector de exclusión, destinado al tránsito peatonal según la organización del operativo.",types:["zone_exclusion"]},
+ {title:"Zonas de estacionamiento permitido",text:"Se completa la presentación con las zonas de estacionamiento permitido para automóviles. No habilitan el estacionamiento de otros tipos de vehículos.",types:["zone_estacionamiento"],match:null,onlyUnmatched:true}
+];
+function canon(r){
+ const raw=String(r?.type||"").trim();if(C[raw])return raw;
+ const n=String(r?.name||"").toLowerCase();
+ if(n.includes("acceso exclusivo")&&n.includes("discapacidad"))return "route_discapacidad";
+ if(n.includes("intendente")||n.includes("alternativa"))return "route_intendente";
+ if(n.includes("sumo")||n.includes("pontífice")||n.includes("pontifice")||n.includes("papamóvil")||n.includes("papamovil"))return "route_pontifice";
+ if(n.includes("excurs")&&n.includes("ruta"))return "route_excursiones";
+ if(n.includes("interdepart")&&n.includes("terminal"))return "zone_terminal_temporal";
+ if(n.includes("interdepart"))return "route_interdepartamental";
+ if(n.includes("exclus")&&n.includes("peatonal"))return "zone_exclusion";
+ if(n.includes("estacionamiento")&&(n.includes("ómnibus")||n.includes("omnibus")||n.includes("micro")||n.includes("excurs")))return "zone_excursiones";
+ if(n.includes("descenso"))return "zone_descenso";
+ if(n.includes("prensa")&&n.includes("vaticano"))return "zone_prensa_vaticano";
+ if(n.includes("prensa")&&(n.includes("nacional")||n.includes("local")))return "zone_prensa_nacional";
+ if(n.includes("discapacidad")||n.includes("discapacitados"))return "zone_discapacidad";
+ if(n.includes("terminal")&&n.includes("interdepart"))return "zone_terminal_temporal";
+ if(n.includes("estacionamiento"))return "zone_estacionamiento";
+ return null;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function boundsFor(list){const b=L.latLngBounds([]);list.forEach(l=>(l.paths||[l.points]).forEach(p=>(p||[]).forEach(v=>{if(Number.isFinite(+v.lat)&&Number.isFinite(+v.lng))b.extend([+v.lat,+v.lng]);})));return b;}
+function shapeFor(l){
+ const c=C[l.type],g=L.featureGroup(),paths=Array.isArray(l.paths)&&l.paths.length?l.paths:[l.points];
+ paths.filter(p=>Array.isArray(p)&&p.length>=2).forEach(path=>{
+  const pts=path.map(p=>[+p.lat,+p.lng]).filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));
+  if(pts.length<2)return;
+  const s=c.kind==="route"?L.polyline(pts,{color:c.color,weight:c.weight,opacity:.72,lineCap:"round",lineJoin:"round"}):L.polygon(pts,{color:c.color,weight:3,opacity:.95,fillColor:c.color,fillOpacity:.35});
+  s.bindTooltip(esc(l.name||c.name),{sticky:true,direction:"top",className:"maplabel"});s.addTo(g);
+ });return g;
+}
+function sceneLayers(s){
+ let chosen=all.filter(l=>s.types.includes(l.type));
+ if(s.match){const matched=chosen.filter(l=>s.match.some(term=>String(l.name||"").toLowerCase().includes(term)));if(matched.length)chosen=matched;else if(s.onlyUnmatched)chosen=[];else if(s.fallbackText)s.text=s.fallbackText;}
+ if(s.onlyUnmatched){const delegation=all.filter(l=>l.type==="zone_estacionamiento"&&["delegación","delegacion","oficial"].some(t=>String(l.name||"").toLowerCase().includes(t)));chosen=chosen.filter(l=>!delegation.includes(l));}
+ return chosen;
+}
+function clearMapLayers(){rendered.forEach(g=>map.removeLayer(g));rendered.clear();}
+function showScene(i,fit=true){
+ sceneIndex=Math.max(0,Math.min(scenes.length-1,i));const s=scenes[sceneIndex];
+ // La animación acumula capas: cada paso añade elementos nuevos sin ocultar los anteriores.
+ const newly=sceneLayers(s);
+ newly.forEach(l=>{if(rendered.has(l.id))return;const g=shapeFor(l);if(g.getLayers().length){g.addTo(map);rendered.set(l.id,g);}});
+ $("kicker").textContent="ETAPA "+String(sceneIndex+1).padStart(2,"0")+" / "+String(scenes.length).padStart(2,"0");
+ $("sceneTitle").textContent=s.title;$("sceneText").textContent=s.text;
+ const types=[...new Set(newly.map(l=>l.type))];
+ $("swatches").innerHTML=types.map(t=>'<span class="swatch"><i class="dot" style="background:'+C[t].color+'"></i>'+esc(C[t].name)+'</span>').join("");
+ $("counter").textContent="ETAPA "+String(sceneIndex+1).padStart(2,"0")+" DE "+String(scenes.length);
+ if(fit){const b=boundsFor([...rendered.keys()].map(id=>all.find(l=>l.id===id)).filter(Boolean));if(b.isValid())map.fitBounds(b.pad(.13),{animate:true,duration:.8,maxZoom:16});}
+ $("prev").disabled=sceneIndex===0;$("next").textContent=sceneIndex===scenes.length-1?"Ver cierre →":"Siguiente →";
+ const now=playing?elapsedBefore+(performance.now()-startedAt):elapsedBefore;
+ $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
+}
+function updateClock(ms){const secs=Math.max(0,Math.min(120,Math.floor(ms/1000)));$("clock").textContent=String(Math.floor(secs/60)).padStart(2,"0")+":"+String(secs%60).padStart(2,"0")+" / 02:00";}
+function tick(){
+ if(!playing)return;const now=elapsedBefore+(performance.now()-startedAt);
+ $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
+ const idx=Math.min(scenes.length-1,Math.floor(now/SCENE_MS));
+ if(idx!==sceneIndex)showScene(idx,true);
+ if(now>=TOTAL){elapsedBefore=TOTAL;playing=false;cancelAnimationFrame(raf);$("play").textContent="↺ Reproducir otra vez";$("counter").textContent="PRESENTACIÓN COMPLETA";$("progress").style.width="100%";updateClock(TOTAL);return;}
+ raf=requestAnimationFrame(tick);
+}
+function play(){if(elapsedBefore>=TOTAL){elapsedBefore=0;clearMapLayers();sceneIndex=-1;showScene(0,true);}if(!playing){playing=true;startedAt=performance.now();$("play").textContent="Ⅱ Pausar";raf=requestAnimationFrame(tick);}else{elapsedBefore+=performance.now()-startedAt;playing=false;cancelAnimationFrame(raf);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);}}
+function reset(){playing=false;cancelAnimationFrame(raf);elapsedBefore=0;clearMapLayers();sceneIndex=-1;showScene(0,true);$("play").textContent="▶ Reproducir";$("progress").style.width="0%";updateClock(0);}
+async function load(){
+ const res=await fetch(API+"?accion=obtenerLogisticaPapa&t="+Date.now(),{cache:"no-store",redirect:"follow"});
+ const raw=await res.text();let d;try{d=JSON.parse(raw)}catch(_){throw new Error("Google Sheets devolvió una respuesta que no es JSON. Comprobá la conexión y los permisos de publicación del Apps Script.");}
+ if(!res.ok||!d||d.ok!==true)throw new Error((d&&d.mensaje)||"Google Sheets no confirmó la lectura de las capas.");
+ let data=d.datos;if(typeof data==="string"){try{data=JSON.parse(data)}catch(_){data=[];}}
+ if(!Array.isArray(data))throw new Error("La respuesta de Google Sheets no contiene una lista de capas.");
+ data.forEach((r,i)=>{const type=canon(r),paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!type||!paths.some(p=>Array.isArray(p)&&p.length>=2))return;all.push({...r,id:String(r.id||type+"-"+i),type,name:type==="route_intendente"?"Ruta alternativa":(String(r.name||"").trim()||C[type].name),paths,points:paths[0]});});
+ if(!all.length)throw new Error("Google Sheets respondió, pero no se encontraron rutas o zonas válidas para animar.");
+}
+$("play").onclick=play;$("restart").onclick=reset;$("prev").onclick=()=>{playing=false;cancelAnimationFrame(raf);elapsedBefore=sceneIndex*SCENE_MS;showScene(Math.max(0,sceneIndex-1),true);elapsedBefore=sceneIndex*SCENE_MS;$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};$("next").onclick=()=>{playing=false;cancelAnimationFrame(raf);if(sceneIndex<scenes.length-1){elapsedBefore=(sceneIndex+1)*SCENE_MS;showScene(sceneIndex+1,true);}else{elapsedBefore=TOTAL;showScene(scenes.length-1,true);} $("play").textContent="▶ Continuar";updateClock(elapsedBefore);};
+$("record").onclick=async()=>{
+ if(recording){if(recorder&&recorder.state!=="inactive")recorder.stop();return;}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){alert("La grabación directa no está disponible en este navegador. Podés reproducir la presentación y grabar la pestaña con una herramienta de captura de pantalla.");return;}
+ try{
+  recordStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:false});
+  recordedChunks=[];const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+  recorder=new MediaRecorder(recordStream,{mimeType:mime,videoBitsPerSecond:5000000});
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
+  recorder.onstop=()=>{const blob=new Blob(recordedChunks,{type:"video/webm"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="operativo-visita-pontifice-florida.webm";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);recordStream.getTracks().forEach(t=>t.stop());recordStream=null;recording=false;$("record").textContent="● Grabar video";$("hint").textContent="Video WebM guardado en el dispositivo.";};
+  recordStream.getVideoTracks()[0].addEventListener("ended",()=>{if(recorder&&recorder.state!=="inactive")recorder.stop()});
+  recorder.start(1000);recording=true;$("record").textContent="■ Detener y guardar";$("hint").textContent="Grabando la pestaña. Reproducí la presentación y detené la grabación al finalizar.";
+  reset();play();
+ }catch(e){console.warn(e);alert("No se inició la grabación. Cuando el navegador lo solicite, elegí compartir esta pestaña y confirmá.");}
+};
+window.addEventListener("resize",()=>map.invalidateSize(true));
+load().then(()=>{
+ $("loading").style.opacity="0";setTimeout(()=>$("loading").remove(),400);
+ const b=boundsFor(all);if(b.isValid())map.fitBounds(b.pad(.12),{animate:false,maxZoom:15});
+ showScene(0,false);$("sceneText").textContent="El mapa está listo. La presentación dura 2 minutos y utiliza las rutas y zonas consultadas directamente desde Google Sheets.";
+}).catch(e=>{$("loading").style.display="none";$("error").style.display="block";$("errorText").textContent=e.message;});
+})();
+</script>
+</body>
+</html>
