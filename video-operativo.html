@@ -176,8 +176,8 @@ async function startAutomaticRecording(){
   play();return;
  }
  try{
-  $("hint").textContent="Elegí compartir esta pestaña para iniciar la grabación automática.";
-  recordStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:false});
+  $("hint").textContent="En la ventana del navegador, elegí “Esta pestaña” o la pestaña de la presentación y confirmá Compartir.";
+  recordStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30,displaySurface:"browser"},audio:false,preferCurrentTab:true,selfBrowserSurface:"include",surfaceSwitching:"include"});
   recordedChunks=[];
   const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
   recorder=new MediaRecorder(recordStream,{mimeType:mime,videoBitsPerSecond:5000000});
@@ -196,7 +196,7 @@ async function startAutomaticRecording(){
   reset();play();
  }catch(e){
   console.warn(e);
-  $("hint").textContent="No se autorizó la captura. La presentación comenzará sin grabación.";
+  $("hint").textContent="No se autorizó la captura o el navegador no ofreció esta pestaña. La presentación comenzará sin grabación. Para grabarla, abrí el sitio en Chrome actualizado y elegí “Esta pestaña” en la ventana Compartir.";
   play();
  }
 }
