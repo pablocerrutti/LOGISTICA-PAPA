@@ -140,7 +140,7 @@ function tick(){
  $("progress").style.width=(Math.min(1,now/TOTAL)*100)+"%";updateClock(now);
  const idx=Math.min(scenes.length-1,Math.floor(now/SCENE_MS));
  if(idx!==sceneIndex)showScene(idx,true);
- if(now>=TOTAL){elapsedBefore=TOTAL;playing=false;cancelAnimationFrame(raf);$("play").textContent="↺ Reproducir otra vez";$("counter").textContent="PRESENTACIÓN COMPLETA";$("progress").style.width="100%";updateClock(TOTAL);return;}
+ if(now>=TOTAL){elapsedBefore=TOTAL;playing=false;cancelAnimationFrame(raf);$("play").textContent="↺ Reproducir otra vez";$("counter").textContent="PRESENTACIÓN COMPLETA";$("progress").style.width="100%";updateClock(TOTAL);if(recording&&recorder&&recorder.state!=="inactive")recorder.stop();return;}
  raf=requestAnimationFrame(tick);
 }
 function play(){if(elapsedBefore>=TOTAL){elapsedBefore=0;clearMapLayers();sceneIndex=-1;showScene(0,true);}if(!playing){playing=true;startedAt=performance.now();$("play").textContent="Ⅱ Pausar";raf=requestAnimationFrame(tick);}else{elapsedBefore+=performance.now()-startedAt;playing=false;cancelAnimationFrame(raf);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);}}
