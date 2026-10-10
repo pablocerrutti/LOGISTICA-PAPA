@@ -78,7 +78,7 @@ const C={
 const $=id=>document.getElementById(id);
 const map=L.map("map",{preferCanvas:true,zoomControl:false,attributionControl:true}).setView([-34.0958,-56.2142],14);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"© OpenStreetMap"}).addTo(map);
-const all=[],rendered=new Map();let sceneIndex=-1,playing=false,startedAt=0,elapsedBefore=0,raf=0,recorder=null,recordStream=null,recordedChunks=[],recording=false;
+const all=[],rendered=new Map();let sceneIndex=-1,playing=false,startedAt=0,elapsedBefore=0,raf=0,recorder=null,recordStream=null,recordedChunks=[],recording=false,firstPlaybackCaptureAttempted=false;
 const scenes=[
  {duration:12000,title:"Recorrido del papamóvil y ruta alternativa",text:"Se presentan el trayecto principal del Sumo Pontífice y la ruta alternativa prevista para el operativo.",types:["route_pontifice","route_intendente"],match:null},
  {duration:9000,title:"Estacionamiento de la delegación oficial",text:"Se identifica el área de estacionamiento prevista para la delegación oficial. Se muestran los elementos que en el mapa publicado estén identificados con esa referencia.",types:["zone_estacionamiento"],match:["delegación","delegacion","oficial"],fallbackText:"Se presenta la zona de estacionamiento permitida registrada en el mapa. Confirmar la denominación específica de la delegación oficial en la capa publicada."},
@@ -169,20 +169,42 @@ async function load(){
  data.forEach((r,i)=>{const type=canon(r),paths=Array.isArray(r.paths)&&r.paths.length?r.paths:[r.points];if(!type||!paths.some(p=>Array.isArray(p)&&p.length>=2))return;all.push({...r,id:String(r.id||type+"-"+i),type,name:type==="route_intendente"?"Ruta alternativa":(String(r.name||"").trim()||C[type].name),paths,points:paths[0]});});
  if(!all.length)throw new Error("Google Sheets respondió, pero no se encontraron rutas o zonas válidas para animar.");
 }
-$("play").onclick=play;$("restart").onclick=reset;$("prev").onclick=()=>{playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(Math.max(0,sceneIndex-1));setIntro(false);showScene(Math.max(0,sceneIndex-1),true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};$("next").onclick=()=>{if(sceneIndex>=scenes.length-1){reset();return;}playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(sceneIndex+1);setIntro(false);showScene(sceneIndex+1,true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};
-$("record").onclick=async()=>{
- if(recording){if(recorder&&recorder.state!=="inactive")recorder.stop();return;}
- if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){alert("La grabación directa no está disponible en este navegador. Podés reproducir la presentación y grabar la pestaña con una herramienta de captura de pantalla.");return;}
+$("play").onclick=()=>{if(!firstPlaybackCaptureAttempted&&elapsedBefore===0&&!playing){firstPlaybackCaptureAttempted=true;startAutomaticRecording();return;}play();};$("restart").onclick=reset;$("prev").onclick=()=>{playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(Math.max(0,sceneIndex-1));setIntro(false);showScene(Math.max(0,sceneIndex-1),true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};$("next").onclick=()=>{if(sceneIndex>=scenes.length-1){reset();return;}playing=false;cancelAnimationFrame(raf);elapsedBefore=INTRO_MS+sceneStart(sceneIndex+1);setIntro(false);showScene(sceneIndex+1,true);$("play").textContent="▶ Continuar";updateClock(elapsedBefore);};
+async function startAutomaticRecording(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||!window.MediaRecorder){
+  $("hint").textContent="Este navegador no permite grabación automática. La presentación comenzará sin grabar.";
+  play();return;
+ }
  try{
+  $("hint").textContent="Elegí compartir esta pestaña para iniciar la grabación automática.";
   recordStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:false});
-  recordedChunks=[];const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
+  recordedChunks=[];
+  const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
   recorder=new MediaRecorder(recordStream,{mimeType:mime,videoBitsPerSecond:5000000});
   recorder.ondataavailable=e=>{if(e.data&&e.data.size)recordedChunks.push(e.data)};
-  recorder.onstop=()=>{const blob=new Blob(recordedChunks,{type:"video/webm"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="operativo-visita-pontifice-florida.webm";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);recordStream.getTracks().forEach(t=>t.stop());recordStream=null;recording=false;$("record").textContent="● Grabar video";$("hint").textContent="Video WebM guardado en el dispositivo.";};
+  recorder.onstop=()=>{
+   const blob=new Blob(recordedChunks,{type:"video/webm"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+   a.href=url;a.download="operativo-visita-pontifice-florida.webm";document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+   if(recordStream)recordStream.getTracks().forEach(t=>t.stop());
+   recordStream=null;recording=false;$("record").textContent="● Grabación finalizada";
+   $("hint").textContent="La primera reproducción terminó. El video se descargó automáticamente en formato WebM.";
+  };
   recordStream.getVideoTracks()[0].addEventListener("ended",()=>{if(recorder&&recorder.state!=="inactive")recorder.stop()});
-  recorder.start(1000);recording=true;$("record").textContent="■ Detener y guardar";$("hint").textContent="La presentación avanza automáticamente y la grabación se detiene al llegar a 02:00.";
+  recorder.start(1000);recording=true;$("record").textContent="● Grabando primera reproducción";
+  $("hint").textContent="Grabando automáticamente la primera reproducción; se guardará al finalizar.";
   reset();play();
- }catch(e){console.warn(e);alert("No se inició la grabación. Cuando el navegador lo solicite, elegí compartir esta pestaña y confirmá.");}
+ }catch(e){
+  console.warn(e);
+  $("hint").textContent="No se autorizó la captura. La presentación comenzará sin grabación.";
+  play();
+ }
+}
+$("record").onclick=async()=>{
+ if(recording){if(recorder&&recorder.state!=="inactive")recorder.stop();return;}
+ if(firstPlaybackCaptureAttempted){alert("La grabación automática corresponde a la primera reproducción. Recargá la página para volver a generar el video.");return;}
+ firstPlaybackCaptureAttempted=true;
+ await startAutomaticRecording();
 };
 window.addEventListener("resize",()=>map.invalidateSize(true));
 load().then(()=>{
