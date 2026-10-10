@@ -172,7 +172,10 @@ async function loadCloud(addToMap=design){
   }
  }
 
- console.warn("No se pudo cargar Logistica Papa desde Google Sheets después de "+maxIntentos+" intentos.",ultimoError);
+ console.error("No se pudo cargar Logistica Papa desde Google Sheets después de "+maxIntentos+" intentos.",ultimoError);
+ window.logisticaPapaConnectionError=ultimoError&&ultimoError.message?ultimoError.message:"Error de conexión desconocido";
+ const status=document.querySelector(".status");
+ if(status)status.textContent="Error de conexión con Google Sheets";
  return false;
 }
 function fit(l){const ps=(l?.paths&&l.paths.length?l.paths:[l?.points||[]]).flat();if(ps.length)map.fitBounds(L.latLngBounds(ps.map(p=>[p.lat,p.lng])).pad(.2),{maxZoom:17})}
@@ -454,5 +457,5 @@ map.on("click",e=>{
  if(drawing){pts.push({lat:e.latlng.lat,lng:e.latlng.lng});redraw();return}
  if(editing&&addingVertex){addVertexAtClick(e.latlng)}
 });$("back").onclick=()=>$("modal").classList.remove("open");$("save").onclick=()=>{const t=canonicalType({type:$("zoneType").value})||$("zoneType").value,nm=$("zoneName").value.trim()||C[t].name,info=$("zoneInfo").value.trim();let l=layers.find(x=>x.type===t&&x.name.trim().toLowerCase()===nm.trim().toLowerCase());if(l){l.paths=(l.paths&&l.paths.length?l.paths:[l.points]);l.paths.push(pts.slice());l.points=l.paths[0];l.informacion=info;if(l.shape)map.removeLayer(l.shape);l.shape=make(l,.98).addTo(map)}else{l={id:"z"+Date.now(),name:nm,type:t,informacion:info,points:pts.slice(),paths:[pts.slice()],visible:true};l.shape=make(l,.98).addTo(map);layers.push(l)}$("modal").classList.remove("open");$("cancel").click();save().then(ok=>{if(ok)dirty=false;render();fit(l)})};Object.entries(C).forEach(([k,c])=>{const o=document.createElement("option");o.value=k;o.textContent=c.name;$("zoneType").append(o)});buttons();render();
-cloudLoadPromise=loadCloud(true).then(ok=>{cloudReady=ok;buttons();render();if(!ok)alert("No se pudo cargar el mapa desde Google Sheets. No se habilitó el dibujo para evitar perder datos.");return ok});
+cloudLoadPromise=loadCloud(true).then(ok=>{cloudReady=ok;buttons();render();if(!ok)alert("No se pudo cargar el mapa desde Google Sheets. Por seguridad, el dibujo permanece deshabilitado para no sobrescribir datos.\n\nDetalle: "+(window.logisticaPapaConnectionError||"No hubo una respuesta válida del servicio.")+"\n\nComprueba que la implementación de Apps Script siga activa y publicada para cualquier usuario con enlace.");return ok});
 }else{buildPresenter();renderPresenter();cloudLoadPromise=(async()=>{let ok=false;for(let intento=1;intento<=3&&!ok;intento++){ok=await loadCloud(false);if(!ok&&intento<3)await new Promise(r=>setTimeout(r,900));}cloudReady=ok;buildPresenter();renderPresenter();if(ok){Object.keys(C).forEach(t=>showPresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=true);const pts=layers.flatMap(l=>(l.paths&&l.paths.length?l.paths:[l.points]).flat()).filter(p=>p&&isFinite(p.lat)&&isFinite(p.lng));if(pts.length)map.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lng])).pad(.12),{maxZoom:16});}setTimeout(()=>map.invalidateSize(true),100);setTimeout(()=>map.invalidateSize(true),600);setTimeout(()=>map.invalidateSize(true),1500);if(!ok)console.warn("Presentador: no se pudo cargar Google Sheets");return ok})();$("showAll").onclick=()=>{Object.keys(C).forEach(t=>showPresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=true);setTimeout(()=>map.invalidateSize(true),100)};$("hideAll").onclick=()=>{Object.keys(C).forEach(t=>hidePresenterType(t));document.querySelectorAll("#presenterList input:not(:disabled)").forEach(x=>x.checked=false)}}})();
