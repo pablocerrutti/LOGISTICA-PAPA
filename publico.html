@@ -138,6 +138,7 @@ button,.btn,.logoutBtn,.type,.layerItem,.presenterItem{touch-action:manipulation
 <div><i style="background:#f28c00"></i>Ruta Alternativa</div>
 <div><i style="background:#ffd400"></i>Ruta excursiones</div>
 <div><i style="background:#0066ff"></i>Ruta interdepartamental</div>
+<div><i style="background:#8b5a2b"></i>Acceso exclusivo vehículos de personas con discapacidad</div>
 <div><i style="background:#000"></i>Zona de exclusión / peatonal</div>
 <div><i style="background:#16a34a"></i>Estacionamiento permitido</div>
 <div><i style="background:#ffd400"></i>Estacionamiento ómnibus / micros</div>
@@ -154,6 +155,7 @@ route_pontifice:{name:"Recorrido del Sumo Pontifice en Papamovil",color:"#e00000
 route_intendente:{name:"Ruta Alternativa",color:"#f28c00",kind:"route",weight:7},
 route_excursiones:{name:"Ruta de ingreso y egreso de ómnibus / micros de excursiones",color:"#ffd400",kind:"route",weight:7},
 route_interdepartamental:{name:"Ruta de ingreso y egreso de ómnibus de empresas interdepartamentales de línea",color:"#0066ff",kind:"route",weight:7},
+route_discapacidad:{name:"Acceso exclusivo vehículos de personas con discapacidad",color:"#8b5a2b",kind:"route",weight:7},
 zone_exclusion:{name:"Zona de exclusión · solo peatonal",color:"#000",kind:"zone"},
 zone_estacionamiento:{name:"Estacionamiento permitido · EXCLUSIVO PARA AUTOMÓVILES · NO OTROS VEHÍCULOS",color:"#16a34a",kind:"zone"},
 zone_excursiones:{name:"Estacionamiento · EXCLUSIVO PARA ÓMNIBUS Y MICROS DE EXCURSIONES · NO AUTOMÓVILES U OTROS VEHÍCULOS",color:"#ffd400",kind:"zone"},
@@ -166,6 +168,7 @@ function canonicalType(r){
 const raw=String(r?.type||"").trim();
 if(C[raw])return raw;
 const n=String(r?.name||"").toLowerCase();
+if(n.includes("acceso exclusivo")&&n.includes("discapacidad"))return "route_discapacidad";
 if(n.includes("intendente"))return "route_intendente";
 if(n.includes("sumo")||n.includes("pontífice")||n.includes("pontifice"))return "route_pontifice";
 if(n.includes("excurs")&&n.includes("ruta"))return "route_excursiones";
